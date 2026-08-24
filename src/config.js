@@ -8,18 +8,20 @@
 // the Slack app exists, and it can never silently happen in production because
 // the boot check below refuses to start without the token.
 
-const REQUIRED_IN_PRODUCTION = ['SLACK_BOT_TOKEN', 'SLACK_CHANNEL'];
+const REQUIRED_IN_PRODUCTION = ['DATABASE_URL', 'SLACK_BOT_TOKEN', 'SLACK_CHANNEL'];
+// DATABASE_URL is required in every environment. Slack is optional and can be
+// dry-run; the database cannot, because it is now what makes a lead durable.
+const REQUIRED_ALWAYS = ['DATABASE_URL'];
 
 function readEnv() {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
 
-  if (isProduction) {
-    const missing = REQUIRED_IN_PRODUCTION.filter((k) => !process.env[k]);
-    if (missing.length) {
-      console.error(`[boot] missing required env vars: ${missing.join(', ')}`);
-      process.exit(1);
-    }
+  const required = isProduction ? REQUIRED_IN_PRODUCTION : REQUIRED_ALWAYS;
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error(`[boot] missing required env vars: ${missing.join(', ')}`);
+    process.exit(1);
   }
 
   const slackBotToken = process.env.SLACK_BOT_TOKEN || null;
@@ -29,6 +31,7 @@ function readEnv() {
     nodeEnv,
     isProduction,
     slackBotToken,
+    databaseUrl: process.env.DATABASE_URL,
     // Channel the referral lands in. A variable rather than a hardcoded string
     // so a channel rename, or a later move to per-line-of-business channels,
     // is a config change instead of a code deploy.
