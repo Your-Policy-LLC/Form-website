@@ -4,7 +4,7 @@
 // this function and only shows the prospect a thank-you once it resolves.
 
 import { config } from './config.js';
-import { labelFor, formatPhone } from './validate.js';
+import { labelFor, productLabelFor, formatPhone } from './validate.js';
 
 const SLACK_URL = 'https://slack.com/api/chat.postMessage';
 
@@ -58,13 +58,28 @@ export function buildMessage(submission, site, consent) {
   // routes the lead to a second person.
   const c = submission.commercial;
   if (c && c.name) {
+    const fields = [
+      { type: 'mrkdwn', text: `*Business:*\n${c.name}` },
+      { type: 'mrkdwn', text: `*Employees:*\n${c.range || 'not given'}` },
+    ];
+    // Only meaningful for a commercial lead that did not already select the
+    // benefits line; for those it is implied and saying so would be noise.
+    if (!submission.lines.includes('employee-benefits')) {
+      fields.push({
+        type: 'mrkdwn',
+        text: `*Employee benefits contact:*\n${c.ebOk ? 'YES, wants a rep' : 'No'}`,
+      });
+    }
+    blocks.push({ type: 'section', fields });
+  }
+
+  if (submission.personalProducts && submission.personalProducts.length) {
     blocks.push({
       type: 'section',
-      fields: [
-        { type: 'mrkdwn', text: `*Business:*\n${c.name}` },
-        { type: 'mrkdwn', text: `*Employees:*\n${c.range || 'not given'}` },
-        { type: 'mrkdwn', text: `*Employee benefits contact:*\n${c.ebOk ? 'YES, wants a rep' : 'No'}` },
-      ],
+      text: {
+        type: 'mrkdwn',
+        text: `*Personal lines wanted:* ${submission.personalProducts.map(productLabelFor).join(', ')}`,
+      },
     });
   }
 

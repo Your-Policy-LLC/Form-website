@@ -29,6 +29,25 @@ export const EMPLOYEE_RANGES = [
 
 const RANGE_IDS = new Set(EMPLOYEE_RANGES.map((r) => r.id));
 
+// Personal lines products. The Toys label names what it covers, because a
+// bare "Toys" leaves a boat owner guessing and leaves a producer unable to
+// tell what was actually meant without calling to ask.
+export const PERSONAL_PRODUCTS = [
+  { id: 'home', label: 'Home' },
+  { id: 'auto', label: 'Auto' },
+  { id: 'flood', label: 'Flood' },
+  { id: 'renters', label: 'Renters' },
+  { id: 'toys', label: 'Toys (boat, ATV/UTV, snowmobile, motorcycle)' },
+  { id: 'rv', label: 'RV' },
+];
+
+const PRODUCT_IDS = new Set(PERSONAL_PRODUCTS.map((p) => p.id));
+const PRODUCT_LABELS = new Map(PERSONAL_PRODUCTS.map((p) => [p.id, p.label]));
+
+export function productLabelFor(id) {
+  return PRODUCT_LABELS.get(id) || id;
+}
+
 export function labelFor(id) {
   return LOB_LABELS.get(id) || id;
 }
@@ -96,15 +115,24 @@ export function validateSubmission(body) {
   // producing two values with no rule for which one wins. The columns remain in
   // the schema, nullable and unused, so restoring any of them is a form change
   // rather than a migration.
-  const commercial = { name: null, phone: null, email: null, zip: null, range: null, ebOk: null };
+  const commercial = { name: null, range: null, ebOk: null };
+  const wantsCommercial = lines.includes('commercial');
+  const wantsBenefits = lines.includes('employee-benefits');
 
-  if (lines.includes('commercial')) {
+  // Business details belong to both lines, asked once when either is selected.
+  if (wantsCommercial || wantsBenefits) {
     commercial.name = str(body?.businessName, 160);
     if (!commercial.name) errors.businessName = 'Business name is required.';
 
     commercial.range = str(body?.employeeRange, 20);
     if (!RANGE_IDS.has(commercial.range)) errors.employeeRange = 'Choose a number of employees.';
+  }
 
+  if (wantsBenefits) {
+    // Selecting the line is a stronger signal than answering yes to a prompt,
+    // so the cross-sell question is not asked and the answer is implied.
+    commercial.ebOk = true;
+  } else if (wantsCommercial) {
     // Strict boolean. An absent value means the question was skipped, which is
     // different from answering no, and must not be silently coerced to false.
     if (typeof body?.ebContactOk !== 'boolean') {
@@ -114,9 +142,21 @@ export function validateSubmission(body) {
     }
   }
 
+  // Personal lines products. Null rather than empty when the line is not
+  // selected, so "did not ask" stays distinct from "asked and chose nothing",
+  // which validation does not allow anyway.
+  let personalProducts = null;
+  if (lines.includes('personal')) {
+    const raw = Array.isArray(body?.personalProducts) ? body.personalProducts : [];
+    personalProducts = [...new Set(raw.filter((p) => PRODUCT_IDS.has(p)))];
+    if (!personalProducts.length) {
+      errors.personalProducts = 'Choose at least one type of personal insurance.';
+    }
+  }
+
   return {
     ok: Object.keys(errors).length === 0,
     errors,
-    value: { lines, firstName, lastName, phone, email, zip, commercial },
+    value: { lines, firstName, lastName, phone, email, zip, commercial, personalProducts },
   };
 }

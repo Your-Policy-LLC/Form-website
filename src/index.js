@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { config } from './config.js';
 import { SITES, getSite, frameAncestorsFor } from './sites.js';
 import { CONSENT } from './consent.js';
-import { LINES_OF_BUSINESS, EMPLOYEE_RANGES, validateSubmission } from './validate.js';
+import { LINES_OF_BUSINESS, EMPLOYEE_RANGES, PERSONAL_PRODUCTS, validateSubmission } from './validate.js';
 import { buildMessage, deliver } from './slack.js';
 import { migrate } from './db/migrate.js';
 import { insertSubmission, markNotified, recordAttempt } from './db/submissions.js';
@@ -94,6 +94,7 @@ function renderForm(site, res) {
     slug: site.slug,
     lines: LINES_OF_BUSINESS,
     employeeRanges: EMPLOYEE_RANGES,
+    personalProducts: PERSONAL_PRODUCTS,
     consentText: CONSENT.text,
     fallbackPhone: config.fallbackPhone,
   };

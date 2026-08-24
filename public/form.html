@@ -109,9 +109,16 @@
     <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
   </div>
 
+  <div id="personal" hidden style="border-top:1px solid var(--line);margin-top:20px;padding-top:18px">
+    <div style="font-weight:650;font-size:15px;padding-bottom:4px">What would you like quoted?</div>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Choose all that apply.</p>
+    <div class="choices" id="products"></div>
+    <p class="err" id="err-personalProducts" role="alert"></p>
+  </div>
+
   <div id="commercial" hidden style="border-top:1px solid var(--line);margin-top:20px;padding-top:18px">
     <div style="font-weight:650;font-size:15px;padding-bottom:4px">Business details</div>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Needed for a commercial quote.</p>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Needed for a commercial or employee benefits quote.</p>
     <div class="grid">
       <div class="field span">
         <label class="lbl" for="businessName">Business name</label>
@@ -126,7 +133,7 @@
         <p class="err" id="err-employeeRange"></p>
       </div>
     </div>
-    <div style="margin-top:14px">
+    <div id="ebQuestion" style="margin-top:14px">
       <div class="lbl" style="margin-bottom:6px">Would you like an employee benefits representative to reach out?</div>
       <div style="display:flex;gap:10px">
         <label class="choice" style="flex:1"><input type="radio" name="ebContactOk" value="yes"><span>Yes</span></label>
@@ -200,15 +207,48 @@ BOOT.employeeRanges.forEach(function (r) {
   rangeSelect.appendChild(o);
 });
 
+function has(id) {
+  return boxes.some(function (b) { return b.checked && b.value === id; });
+}
+
+var personalBox = document.getElementById('personal');
+var productsBox = document.getElementById('products');
+BOOT.personalProducts.forEach(function (p) {
+  var row = document.createElement('label');
+  row.className = 'choice';
+  var input = document.createElement('input');
+  input.type = 'checkbox';
+  input.value = p.id;
+  input.className = 'prod';
+  var span = document.createElement('span');
+  span.textContent = p.label;
+  row.appendChild(input);
+  row.appendChild(span);
+  productsBox.appendChild(row);
+});
+var prodBoxes = Array.prototype.slice.call(document.querySelectorAll('.prod'));
+prodBoxes.forEach(function (b) {
+  b.addEventListener('change', function () { clearError('personalProducts'); });
+});
+
 // Shown only while Commercial is selected. Deselecting hides the section and
 // clears its errors, so a stale message cannot survive on a hidden field and
 // block submission with nothing visible to fix.
 function syncCommercial() {
-  var on = boxes.some(function (b) { return b.checked && b.value === 'commercial'; });
-  commercialBox.hidden = !on;
-  if (!on) {
+  var business = has('commercial') || has('employee-benefits');
+  commercialBox.hidden = !business;
+  // The cross-sell question is pointless for someone who already asked for
+  // employee benefits, so it is hidden and the answer is implied server-side.
+  document.getElementById('ebQuestion').hidden = !(has('commercial') && !has('employee-benefits'));
+
+  personalBox.hidden = !has('personal');
+
+  if (!business) {
     ['businessName', 'employeeRange', 'ebContactOk']
       .forEach(function (f) { var e = document.getElementById('err-' + f); if (e) e.textContent = ''; });
+  }
+  if (personalBox.hidden) {
+    document.getElementById('err-personalProducts').textContent = '';
   }
   reportHeight();
 }
@@ -292,13 +332,20 @@ form.addEventListener('submit', function (event) {
     utm: meta.utm
   };
 
-  if (boxes.some(function (b) { return b.checked && b.value === 'commercial'; })) {
+  if (boxes.some(function (b) { return b.checked && b.value === 'commercial'; }) ||
+      boxes.some(function (b) { return b.checked && b.value === 'employee-benefits'; })) {
     var eb = document.querySelector('input[name="ebContactOk"]:checked');
     payload.businessName = document.getElementById('businessName').value;
     payload.employeeRange = document.getElementById('employeeRange').value;
     // Left undefined when nothing is chosen, so the server can tell "skipped"
     // apart from an explicit no.
     if (eb) payload.ebContactOk = eb.value === 'yes';
+  }
+
+  if (boxes.some(function (b) { return b.checked && b.value === 'personal'; })) {
+    payload.personalProducts = prodBoxes
+      .filter(function (b) { return b.checked; })
+      .map(function (b) { return b.value; });
   }
 
   submitBtn.disabled = true;
