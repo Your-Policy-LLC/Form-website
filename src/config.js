@@ -8,20 +8,21 @@
 // the Slack app exists, and it can never silently happen in production because
 // the boot check below refuses to start without the token.
 
-const REQUIRED_IN_PRODUCTION = ['DATABASE_URL', 'SLACK_BOT_TOKEN', 'SLACK_CHANNEL'];
-// DATABASE_URL is required in every environment. Slack is optional and can be
-// dry-run; the database cannot, because it is now what makes a lead durable.
-const REQUIRED_ALWAYS = ['DATABASE_URL'];
+// Nothing here is fatal any more. Earlier this exited on a missing Slack token
+// because Slack was the only record of a lead, so running without it meant
+// losing leads silently. Postgres is the system of record now: a missing token
+// delays notification, it does not lose anything. And a process that refuses to
+// boot gives a bare 502 with no way to see what is wrong, which is worse than
+// running degraded and saying so on /healthz.
+const EXPECTED = ['DATABASE_URL', 'SLACK_BOT_TOKEN', 'SLACK_CHANNEL'];
 
 function readEnv() {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
 
-  const required = isProduction ? REQUIRED_IN_PRODUCTION : REQUIRED_ALWAYS;
-  const missing = required.filter((k) => !process.env[k]);
+  const missing = EXPECTED.filter((k) => !process.env[k]);
   if (missing.length) {
-    console.error(`[boot] missing required env vars: ${missing.join(', ')}`);
-    process.exit(1);
+    console.warn(`[boot] not set: ${missing.join(', ')} (running degraded)`);
   }
 
   const slackBotToken = process.env.SLACK_BOT_TOKEN || null;

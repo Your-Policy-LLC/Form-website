@@ -70,6 +70,8 @@ app.get('/healthz', async (_req, res) => {
   res.json({
     ok: true,
     db,
+    dbReady,
+    migrationError: dbError,
     slack: config.slackDryRun ? 'dry-run' : 'configured',
     consentApproved: CONSENT.approved,
     sites: Object.keys(SITES).length,
@@ -143,6 +145,7 @@ app.post('/api/submit', async (req, res) => {
 
   let row;
   try {
+    if (!dbReady) throw new Error(`database unavailable: ${dbError}`);
     row = await insertSubmission(submission, site, CONSENT);
   } catch (err) {
     // The only failure that still costs us the lead. Told plainly rather than
@@ -193,14 +196,20 @@ function sanitiseUtm(raw) {
 
 app.use((_req, res) => res.status(404).type('text/plain').send('Not found.'));
 
-// Migrations gate the listen. Serving traffic against a database whose schema
-// has not been applied would fail on the first submission, which is the worst
-// possible moment to discover it.
+// Migrations are attempted before listen, but a failure no longer kills the
+// process. Exiting produced a crash loop with no diagnostic surface: Railway
+// returns a bare 502 and the actual error is buried in deploy logs. The form
+// page needs no database, so the service now starts, serves the form, reports
+// the real error on /healthz, and refuses only the submissions it cannot store.
+let dbReady = false;
+let dbError = null;
+
 try {
   await migrate();
+  dbReady = true;
 } catch (err) {
-  console.error(`[boot] migration failed: ${err.message}`);
-  process.exit(1);
+  dbError = err.message;
+  console.error(`[boot] DEGRADED: migrations failed, submissions disabled: ${err.message}`);
 }
 
 app.listen(config.port, () => {

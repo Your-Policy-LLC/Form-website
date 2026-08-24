@@ -1,5 +1,12 @@
 import pg from 'pg';
+import dns from 'node:dns';
 import { config } from '../config.js';
+
+// Railway's private network resolves internal hostnames over IPv6 only. Node
+// may order IPv4 first when resolving, which fails to connect with an error
+// that looks like the database is down rather than unreachable. Harmless when
+// the host is dual-stack.
+dns.setDefaultResultOrder('ipv6first');
 
 // Railway's internal hostnames resolve inside the project and do not present a
 // publicly-trusted certificate. The public proxy does. Enabling SSL without
