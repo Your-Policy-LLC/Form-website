@@ -53,6 +53,24 @@ export function buildMessage(submission, site, consent) {
     { type: 'section', text: { type: 'mrkdwn', text: contact.join('\n') } },
   ];
 
+  // Commercial detail, only present when Commercial was selected. The employee
+  // benefits answer is called out explicitly because it is the one field that
+  // routes the lead to a second person.
+  const c = submission.commercial;
+  if (c && c.name) {
+    blocks.push({
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*Business:*\n${c.name}` },
+        { type: 'mrkdwn', text: `*Employees:*\n${c.range || 'not given'}` },
+        { type: 'mrkdwn', text: `*Business phone:*\n${formatPhone(c.phone)}` },
+        { type: 'mrkdwn', text: `*Business email:*\n${c.email || 'not given'}` },
+        { type: 'mrkdwn', text: `*Business ZIP:*\n${c.zip || 'not given'}` },
+        { type: 'mrkdwn', text: `*Employee benefits contact:*\n${c.ebOk ? 'YES, wants a rep' : 'No'}` },
+      ],
+    });
+  }
+
   const provenance = [`Page: ${submission.pageUrl || 'unknown'}`];
   if (submission.utm && Object.keys(submission.utm).length) {
     provenance.push(

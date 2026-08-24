@@ -16,6 +16,19 @@ export const LINES_OF_BUSINESS = [
 const LOB_IDS = new Set(LINES_OF_BUSINESS.map((l) => l.id));
 const LOB_LABELS = new Map(LINES_OF_BUSINESS.map((l) => [l.id, l.label]));
 
+// Boundaries do not overlap. Ranges like "1-10" and "10-30" would leave a
+// company with exactly 10 employees able to pick either one, which quietly
+// makes the field unusable for segmentation.
+export const EMPLOYEE_RANGES = [
+  { id: '1-10', label: '1-10' },
+  { id: '11-30', label: '11-30' },
+  { id: '31-50', label: '31-50' },
+  { id: '51-100', label: '51-100' },
+  { id: '100+', label: '100+' },
+];
+
+const RANGE_IDS = new Set(EMPLOYEE_RANGES.map((r) => r.id));
+
 export function labelFor(id) {
   return LOB_LABELS.get(id) || id;
 }
@@ -78,9 +91,43 @@ export function validateSubmission(body) {
     errors.consent = 'Please agree before submitting.';
   }
 
+  // Commercial expands the form. These are required only when it is selected,
+  // and are stored as null otherwise so a personal lead is not carrying empty
+  // strings that look like answered-but-blank.
+  const commercial = { name: null, phone: null, email: null, zip: null, range: null, ebOk: null };
+
+  if (lines.includes('commercial')) {
+    commercial.name = str(body?.businessName, 160);
+    if (!commercial.name) errors.businessName = 'Business name is required.';
+
+    const bPhoneRaw = str(body?.businessPhone, 40);
+    commercial.phone = bPhoneRaw ? normalisePhone(bPhoneRaw) : null;
+    if (!bPhoneRaw) errors.businessPhone = 'Business phone is required.';
+    else if (!commercial.phone) errors.businessPhone = 'Enter a 10-digit phone number.';
+
+    const bEmailRaw = str(body?.businessEmail, 254).toLowerCase();
+    commercial.email = bEmailRaw && EMAIL_RE.test(bEmailRaw) ? bEmailRaw : null;
+    if (!bEmailRaw) errors.businessEmail = 'Business email is required.';
+    else if (!commercial.email) errors.businessEmail = 'Enter a valid email address.';
+
+    commercial.zip = str(body?.businessZip, 10);
+    if (!/^\d{5}$/.test(commercial.zip)) errors.businessZip = 'Enter a 5-digit ZIP code.';
+
+    commercial.range = str(body?.employeeRange, 20);
+    if (!RANGE_IDS.has(commercial.range)) errors.employeeRange = 'Choose a number of employees.';
+
+    // Strict boolean. An absent value means the question was skipped, which is
+    // different from answering no, and must not be silently coerced to false.
+    if (typeof body?.ebContactOk !== 'boolean') {
+      errors.ebContactOk = 'Please choose yes or no.';
+    } else {
+      commercial.ebOk = body.ebContactOk;
+    }
+  }
+
   return {
     ok: Object.keys(errors).length === 0,
     errors,
-    value: { lines, firstName, lastName, phone, email, zip },
+    value: { lines, firstName, lastName, phone, email, zip, commercial },
   };
 }

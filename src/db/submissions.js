@@ -7,8 +7,10 @@ export async function insertSubmission(submission, site, consent) {
   const { rows } = await query(
     `insert into submissions
        (site_slug, lines, first_name, last_name, phone, email, zip,
-        page_url, utm, consent_version, consent_text)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11)
+        page_url, utm, consent_version, consent_text,
+        business_name, business_phone, business_email, business_zip,
+        employee_range, eb_contact_ok)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,$14,$15,$16,$17)
      returning id, created_at`,
     [
       site.slug,
@@ -22,6 +24,12 @@ export async function insertSubmission(submission, site, consent) {
       JSON.stringify(submission.utm || {}),
       consent.version,
       consent.text,
+      submission.commercial?.name || null,
+      submission.commercial?.phone || null,
+      submission.commercial?.email || null,
+      submission.commercial?.zip || null,
+      submission.commercial?.range || null,
+      submission.commercial?.ebOk ?? null,
     ],
   );
   return rows[0];
