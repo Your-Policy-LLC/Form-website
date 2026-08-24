@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { config } from './config.js';
-import { SITES, getSite, frameAncestorsFor } from './sites.js';
+import { SITES, getSite, frameAncestorsFor, themeCss } from './sites.js';
 import { CONSENT } from './consent.js';
-import { LINES_OF_BUSINESS, EMPLOYEE_RANGES, PERSONAL_PRODUCTS, validateSubmission } from './validate.js';
+import { LINES_OF_BUSINESS, PERSONAL_PRODUCTS, validateSubmission } from './validate.js';
 import { buildMessage, deliver } from './slack.js';
 import { migrate } from './db/migrate.js';
 import { insertSubmission, markNotified, recordAttempt } from './db/submissions.js';
@@ -93,7 +93,6 @@ function renderForm(site, res) {
   const bootstrap = {
     slug: site.slug,
     lines: LINES_OF_BUSINESS,
-    employeeRanges: EMPLOYEE_RANGES,
     personalProducts: PERSONAL_PRODUCTS,
     consentText: CONSENT.text,
     fallbackPhone: config.fallbackPhone,
@@ -103,7 +102,11 @@ function renderForm(site, res) {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('Referrer-Policy', 'no-referrer');
   res.type('html');
-  res.send(formTemplate.replace('"__BOOTSTRAP__"', JSON.stringify(bootstrap)));
+  res.send(
+    formTemplate
+      .replace('/*__THEME__*/', themeCss(site.theme))
+      .replace('"__BOOTSTRAP__"', JSON.stringify(bootstrap)),
+  );
 }
 
 // The root serves the default site's form so the bare domain is directly

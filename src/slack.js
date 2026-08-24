@@ -60,7 +60,7 @@ export function buildMessage(submission, site, consent) {
   if (c && c.name) {
     const fields = [
       { type: 'mrkdwn', text: `*Business:*\n${c.name}` },
-      { type: 'mrkdwn', text: `*Employees:*\n${c.range || 'not given'}` },
+      { type: 'mrkdwn', text: `*Employees:*\n${c.count ?? 'not given'}` },
     ];
     // Each cross-sell answer is shown only when it was actually asked, so a
     // producer reading the lead never sees a field the prospect never saw.
