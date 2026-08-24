@@ -11,10 +11,11 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "check": "node --check src/index.js && node --check src/config.js && node --check src/sites.js && node --check src/consent.js && node --check src/validate.js && node --check src/slack.js && node --check public/embed.js",
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/sites.js && node --check src/consent.js && node --check src/validate.js && node --check src/slack.js && node --check src/db/pool.js && node --check src/db/migrate.js && node --check src/db/submissions.js && node --check public/embed.js",
     "test": "node --test test/"
   },
   "dependencies": {
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
   }
 }

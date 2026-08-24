@@ -8,6 +8,9 @@ import { SITES, getSite, frameAncestorsFor } from './sites.js';
 import { CONSENT } from './consent.js';
 import { LINES_OF_BUSINESS, validateSubmission } from './validate.js';
 import { buildMessage, deliver } from './slack.js';
+import { migrate } from './db/migrate.js';
+import { insertSubmission, markNotified, recordAttempt } from './db/submissions.js';
+import { query } from './db/pool.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(here, '..', 'public');
@@ -57,9 +60,18 @@ setInterval(() => {
 // Liveness only, matching people-website's convention: 200 while the process is
 // alive. Slack being unreachable is not a reason for Railway to restart us into
 // a loop.
-app.get('/healthz', (_req, res) => {
+app.get('/healthz', async (_req, res) => {
+  let db = 'ok';
+  try {
+    await query('select 1');
+  } catch (err) {
+    db = `error: ${err.message}`;
+  }
   res.json({
     ok: true,
+    db,
+    dbReady,
+    migrationError: dbError,
     slack: config.slackDryRun ? 'dry-run' : 'configured',
     consentApproved: CONSENT.approved,
     sites: Object.keys(SITES).length,
@@ -131,18 +143,44 @@ app.post('/api/submit', async (req, res) => {
     utm: sanitiseUtm(req.body?.utm),
   };
 
-  const result = await deliver(buildMessage(submission, site, CONSENT));
-
-  if (!result.delivered) {
-    // The prospect is told the truth. A thank-you here would mean the lead is
-    // gone and nobody, including them, knows it.
-    console.error(`[submit] NOT DELIVERED slug=${site.slug} reason=${result.reason}`);
+  let row;
+  try {
+    if (!dbReady) throw new Error(`database unavailable: ${dbError}`);
+    row = await insertSubmission(submission, site, CONSENT);
+  } catch (err) {
+    // The only failure that still costs us the lead. Told plainly rather than
+    // thanked for something that was never saved.
+    console.error(`[submit] PERSIST FAILED slug=${site.slug} message=${err.message}`);
     return res.status(502).json({ ok: false, undelivered: true });
   }
 
-  console.log(`[submit] delivered slug=${site.slug} lines=${submission.lines.join('+')} zip=${submission.zip}`);
-  return res.json({ ok: true });
+  console.log(`[submit] saved id=${row.id} slug=${site.slug} lines=${submission.lines.join('+')} zip=${submission.zip}`);
+
+  // The lead is durable now, so the prospect is answered immediately. Slack is
+  // a notification over a record that already exists; if it fails the row stays
+  // unnotified and is recoverable, which is why it no longer gates the reply.
+  res.json({ ok: true });
+
+  notifySlack(row, submission, site);
+  return undefined;
 });
+
+async function notifySlack(row, submission, site) {
+  try {
+    await recordAttempt(row.id);
+    const result = await deliver(buildMessage(submission, site, CONSENT));
+    if (!result.delivered) {
+      console.error(`[notify] failed id=${row.id} reason=${result.reason}`);
+      return;
+    }
+    // markNotified only succeeds if the row was still unnotified. A second
+    // caller logs "already marked" instead of posting twice.
+    const claimed = await markNotified(row.id, result.ts);
+    console.log(`[notify] ${claimed ? 'marked' : 'skipped: already marked'} id=${row.id}`);
+  } catch (err) {
+    console.error(`[notify] error id=${row.id} message=${err.message}`);
+  }
+}
 
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'];
 
@@ -157,6 +195,22 @@ function sanitiseUtm(raw) {
 }
 
 app.use((_req, res) => res.status(404).type('text/plain').send('Not found.'));
+
+// Migrations are attempted before listen, but a failure no longer kills the
+// process. Exiting produced a crash loop with no diagnostic surface: Railway
+// returns a bare 502 and the actual error is buried in deploy logs. The form
+// page needs no database, so the service now starts, serves the form, reports
+// the real error on /healthz, and refuses only the submissions it cannot store.
+let dbReady = false;
+let dbError = null;
+
+try {
+  await migrate();
+  dbReady = true;
+} catch (err) {
+  dbError = err.message;
+  console.error(`[boot] DEGRADED: migrations failed, submissions disabled: ${err.message}`);
+}
 
 app.listen(config.port, () => {
   console.log(`[boot] listening port=${config.port} env=${config.nodeEnv}`);

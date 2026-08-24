@@ -8,18 +8,21 @@
 // the Slack app exists, and it can never silently happen in production because
 // the boot check below refuses to start without the token.
 
-const REQUIRED_IN_PRODUCTION = ['SLACK_BOT_TOKEN', 'SLACK_CHANNEL'];
+// Nothing here is fatal any more. Earlier this exited on a missing Slack token
+// because Slack was the only record of a lead, so running without it meant
+// losing leads silently. Postgres is the system of record now: a missing token
+// delays notification, it does not lose anything. And a process that refuses to
+// boot gives a bare 502 with no way to see what is wrong, which is worse than
+// running degraded and saying so on /healthz.
+const EXPECTED = ['DATABASE_URL', 'SLACK_BOT_TOKEN', 'SLACK_CHANNEL'];
 
 function readEnv() {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
 
-  if (isProduction) {
-    const missing = REQUIRED_IN_PRODUCTION.filter((k) => !process.env[k]);
-    if (missing.length) {
-      console.error(`[boot] missing required env vars: ${missing.join(', ')}`);
-      process.exit(1);
-    }
+  const missing = EXPECTED.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.warn(`[boot] not set: ${missing.join(', ')} (running degraded)`);
   }
 
   const slackBotToken = process.env.SLACK_BOT_TOKEN || null;
@@ -29,6 +32,7 @@ function readEnv() {
     nodeEnv,
     isProduction,
     slackBotToken,
+    databaseUrl: process.env.DATABASE_URL,
     // Channel the referral lands in. A variable rather than a hardcoded string
     // so a channel rename, or a later move to per-line-of-business channels,
     // is a config change instead of a code deploy.
