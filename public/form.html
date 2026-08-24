@@ -6,42 +6,41 @@
 <meta name="robots" content="noindex">
 <title>Request a Quote</title>
 <style>
-  :root {
-    --ink: #16202c;
-    --muted: #5b6875;
-    --line: #d4dae1;
-    --accent: #0b5cab;
-    --error: #b3261e;
-  }
+  :root { /*__THEME__*/ }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 4px;
-    background: #fff;
-    color: var(--ink);
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
     font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   fieldset { border: 0; margin: 0 0 22px; padding: 0; }
-  legend { font-weight: 650; font-size: 15px; padding: 0 0 8px; }
+  legend { padding: 0 0 8px; }
+  .req-note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+  .star { color: var(--accent); }
+  .sec { font-size: 12px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; padding-bottom: 8px; }
   .choices { display: grid; gap: 2px; }
   .choice {
     display: flex; align-items: center; gap: 10px;
-    padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px;
+    padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px;
     cursor: pointer;
   }
   .choice:hover { border-color: var(--accent); }
   .choice input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
-  .choice-all { margin-bottom: 8px; font-weight: 600; background: #f4f7fa; }
+  .choice-all { margin-bottom: 8px; font-weight: 600; background: var(--field); }
   .grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
   @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
   .field { display: flex; flex-direction: column; gap: 5px; }
   .field.span { grid-column: 1 / -1; }
-  label.lbl { font-size: 14px; font-weight: 600; }
+  label.lbl { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
   .hint { font-size: 13px; color: var(--muted); font-weight: 400; }
   input[type=text], input[type=tel], input[type=email] {
-    padding: 10px; font-size: 16px; border: 1px solid var(--line);
-    border-radius: 6px; font-family: inherit; color: inherit;
+    padding: 12px; font-size: 16px; border: 1px solid var(--border);
+    border-radius: 6px; font-family: inherit;
+    background: var(--field); color: var(--text);
   }
+  input::placeholder { color: var(--muted); opacity: .75; }
   input:focus-visible, .choice:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
   .err { color: var(--error); font-size: 13px; min-height: 0; }
   .err:empty { display: none; }
@@ -51,7 +50,7 @@
   .consent span { font-size: 13px; color: var(--muted); }
   button {
     width: 100%; padding: 13px; font-size: 16px; font-weight: 650;
-    font-family: inherit; color: #fff; background: var(--accent);
+    font-family: inherit; color: var(--accentText); background: var(--accent);
     border: 0; border-radius: 6px; cursor: pointer;
   }
   button:hover { filter: brightness(1.08); }
@@ -62,7 +61,7 @@
   .done p { margin: 0; color: var(--muted); }
   .formerr {
     margin: 14px 0 0; padding: 12px; border-radius: 6px;
-    background: #fdecea; color: var(--error); font-size: 14px;
+    background: rgba(255,255,255,.08); color: var(--error); font-size: 14px;
   }
   [hidden] { display: none !important; }
 </style>
@@ -70,36 +69,37 @@
 <body>
 
 <form id="quote" novalidate>
+  <p class="req-note"><span class="star">*</span> indicates a required field</p>
   <fieldset>
-    <legend id="lines-legend">Type of Insurance Quote</legend>
+    <legend id="lines-legend" class="sec">Type of insurance <span class="star">*</span></legend>
     <div class="choices" role="group" aria-labelledby="lines-legend" id="lines"></div>
     <p class="err" id="err-lines" role="alert"></p>
   </fieldset>
 
   <div class="grid">
     <div class="field">
-      <label class="lbl" for="firstName">First name</label>
-      <input id="firstName" name="firstName" type="text" autocomplete="given-name" required>
+      <label class="lbl" for="firstName">First name <span class="star">*</span></label>
+      <input id="firstName" name="firstName" type="text" autocomplete="given-name" placeholder="Jane" required>
       <p class="err" id="err-firstName"></p>
     </div>
     <div class="field">
-      <label class="lbl" for="lastName">Last name</label>
-      <input id="lastName" name="lastName" type="text" autocomplete="family-name" required>
+      <label class="lbl" for="lastName">Last name <span class="star">*</span></label>
+      <input id="lastName" name="lastName" type="text" autocomplete="family-name" placeholder="Martinez" required>
       <p class="err" id="err-lastName"></p>
     </div>
     <div class="field">
-      <label class="lbl" for="phone">Phone <span class="hint">(phone or email)</span></label>
-      <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel">
+      <label class="lbl" for="phone">Phone <span class="star">*</span></label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(512) 123-4567">
       <p class="err" id="err-phone"></p>
     </div>
     <div class="field">
-      <label class="lbl" for="email">Email <span class="hint">(phone or email)</span></label>
-      <input id="email" name="email" type="email" autocomplete="email" inputmode="email">
+      <label class="lbl" for="email">Email <span class="star">*</span></label>
+      <input id="email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="jane@acme.com">
       <p class="err" id="err-email"></p>
     </div>
     <div class="field">
-      <label class="lbl" for="zip">ZIP code</label>
-      <input id="zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="5">
+      <label class="lbl" for="zip">ZIP code <span class="star">*</span></label>
+      <input id="zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="5" placeholder="77056">
       <p class="err" id="err-zip"></p>
     </div>
   </div>
@@ -109,28 +109,26 @@
     <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
   </div>
 
-  <div id="personal" hidden style="border-top:1px solid var(--line);margin-top:20px;padding-top:18px">
-    <div style="font-weight:650;font-size:15px;padding-bottom:4px">What would you like quoted?</div>
+  <div id="personal" hidden style="border-top:1px solid var(--border);margin-top:20px;padding-top:18px">
+    <div class="sec">What would you like quoted? <span class="star">*</span></div>
     <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Choose all that apply.</p>
     <div class="choices" id="products"></div>
     <p class="err" id="err-personalProducts" role="alert"></p>
   </div>
 
-  <div id="commercial" hidden style="border-top:1px solid var(--line);margin-top:20px;padding-top:18px">
-    <div style="font-weight:650;font-size:15px;padding-bottom:4px">Business details</div>
+  <div id="commercial" hidden style="border-top:1px solid var(--border);margin-top:20px;padding-top:18px">
+    <div class="sec">Business details</div>
     <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Needed for a commercial or employee benefits quote.</p>
     <div class="grid">
       <div class="field span">
-        <label class="lbl" for="businessName">Business name</label>
-        <input id="businessName" type="text" autocomplete="organization">
+        <label class="lbl" for="businessName">Business name <span class="star">*</span></label>
+        <input id="businessName" type="text" autocomplete="organization" placeholder="Acme Fabrication LLC">
         <p class="err" id="err-businessName"></p>
       </div>
       <div class="field">
-        <label class="lbl" for="employeeRange">Number of employees</label>
-        <select id="employeeRange" style="padding:10px;font-size:16px;border:1px solid var(--line);border-radius:6px;font-family:inherit;color:inherit;background:#fff">
-          <option value="">Select...</option>
-        </select>
-        <p class="err" id="err-employeeRange"></p>
+        <label class="lbl" for="employeeCount">Number of employees <span class="star">*</span></label>
+        <input id="employeeCount" type="text" inputmode="numeric" maxlength="7" placeholder="42">
+        <p class="err" id="err-employeeCount"></p>
       </div>
     </div>
     <div id="ebQuestion" style="margin-top:14px">
@@ -207,13 +205,6 @@ var all = document.getElementById('all');
 var boxes = Array.prototype.slice.call(document.querySelectorAll('.lob'));
 
 var commercialBox = document.getElementById('commercial');
-var rangeSelect = document.getElementById('employeeRange');
-BOOT.employeeRanges.forEach(function (r) {
-  var o = document.createElement('option');
-  o.value = r.id;
-  o.textContent = r.label;
-  rangeSelect.appendChild(o);
-});
 
 function has(id) {
   return boxes.some(function (b) { return b.checked && b.value === id; });
@@ -253,7 +244,7 @@ function syncCommercial() {
   personalBox.hidden = !has('personal');
 
   if (!business) {
-    ['businessName', 'employeeRange', 'ebContactOk', 'commercialQuoteOk']
+    ['businessName', 'employeeCount', 'ebContactOk', 'commercialQuoteOk']
       .forEach(function (f) { var e = document.getElementById('err-' + f); if (e) e.textContent = ''; });
   }
   if (personalBox.hidden) {
@@ -297,7 +288,7 @@ function showErrors(errors) {
 }
 
 ['firstName', 'lastName', 'phone', 'email', 'zip', 'consent',
- 'businessName', 'employeeRange'].forEach(function (f) {
+ 'businessName', 'employeeCount'].forEach(function (f) {
   var el = document.getElementById(f);
   if (el) el.addEventListener('input', function () { clearError(f); });
   if (el && el.type === 'checkbox') el.addEventListener('change', function () { clearError(f); });
@@ -346,7 +337,7 @@ form.addEventListener('submit', function (event) {
     var eb = document.querySelector('input[name="ebContactOk"]:checked');
     var cq = document.querySelector('input[name="commercialQuoteOk"]:checked');
     payload.businessName = document.getElementById('businessName').value;
-    payload.employeeRange = document.getElementById('employeeRange').value;
+    payload.employeeCount = document.getElementById('employeeCount').value;
     // Left undefined when nothing is chosen, so the server can tell "skipped"
     // apart from an explicit no.
     if (eb) payload.ebContactOk = eb.value === 'yes';
@@ -410,7 +401,7 @@ if (window.ResizeObserver) {
 window.addEventListener('load', reportHeight);
 syncAll();
 syncCommercial();
-document.getElementById('employeeRange').addEventListener('change', function () { clearError('employeeRange'); });
+
 Array.prototype.forEach.call(document.querySelectorAll('input[name="ebContactOk"]'), function (r) {
   r.addEventListener('change', function () { clearError('ebContactOk'); });
 });

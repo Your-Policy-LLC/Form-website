@@ -27,7 +27,7 @@ export const EMPLOYEE_RANGES = [
   { id: '100+', label: '100+' },
 ];
 
-const RANGE_IDS = new Set(EMPLOYEE_RANGES.map((r) => r.id));
+
 
 // Personal lines products. The Toys label names what it covers, because a
 // bare "Toys" leaves a boat owner guessing and leaves a producer unable to
@@ -96,13 +96,13 @@ export function validateSubmission(body) {
   const phone = rawPhone ? normalisePhone(rawPhone) : null;
   const email = rawEmail && EMAIL_RE.test(rawEmail) ? rawEmail : null;
 
-  if (rawPhone && !phone) errors.phone = 'Enter a 10-digit phone number.';
-  if (rawEmail && !email) errors.email = 'Enter a valid email address.';
-  if (!rawPhone && !rawEmail) {
-    // Attached to both fields so the message appears wherever they are looking.
-    errors.phone = 'Enter a phone number or an email address.';
-    errors.email = 'Enter a phone number or an email address.';
-  }
+  // Both required, matching the existing form on your-policy.com. Previously
+  // either would do, which is why the labels carried a "phone or email" hint.
+  if (!rawPhone) errors.phone = 'Phone number is required.';
+  else if (!phone) errors.phone = 'Enter a 10-digit phone number.';
+
+  if (!rawEmail) errors.email = 'Email address is required.';
+  else if (!email) errors.email = 'Enter a valid email address.';
 
   const zip = str(body?.zip, 10);
   if (!/^\d{5}$/.test(zip)) errors.zip = 'Enter a 5-digit ZIP code.';
@@ -116,7 +116,7 @@ export function validateSubmission(body) {
   // producing two values with no rule for which one wins. The columns remain in
   // the schema, nullable and unused, so restoring any of them is a form change
   // rather than a migration.
-  const commercial = { name: null, range: null, ebOk: null, commercialOk: null };
+  const commercial = { name: null, count: null, ebOk: null, commercialOk: null };
   const wantsCommercial = lines.includes('commercial');
   const wantsBenefits = lines.includes('employee-benefits');
 
@@ -125,8 +125,16 @@ export function validateSubmission(body) {
     commercial.name = str(body?.businessName, 160);
     if (!commercial.name) errors.businessName = 'Business name is required.';
 
-    commercial.range = str(body?.employeeRange, 20);
-    if (!RANGE_IDS.has(commercial.range)) errors.employeeRange = 'Choose a number of employees.';
+    // A precise headcount rather than a bucket. Parsed strictly: "about 40" and
+    // "40-50" are rejected rather than stored as text nobody can aggregate.
+    const rawCount = str(body?.employeeCount, 12);
+    if (!rawCount) {
+      errors.employeeCount = 'Number of employees is required.';
+    } else if (!/^\d{1,7}$/.test(rawCount) || Number(rawCount) < 1) {
+      errors.employeeCount = 'Enter a whole number, for example 42.';
+    } else {
+      commercial.count = Number(rawCount);
+    }
   }
 
   // Each line implies interest in itself, and each is offered the other. When
@@ -161,7 +169,7 @@ export function validateSubmission(body) {
     const raw = Array.isArray(body?.personalProducts) ? body.personalProducts : [];
     personalProducts = [...new Set(raw.filter((p) => PRODUCT_IDS.has(p)))];
     if (!personalProducts.length) {
-      errors.personalProducts = 'Choose at least one type of personal insurance.';
+      errors.personalProducts = 'Please choose at least one line of insurance so we can help.';
     }
   }
 
