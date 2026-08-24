@@ -152,12 +152,6 @@
     </div>
   </div>
 
-  <label class="consent">
-    <input id="consent" type="checkbox">
-    <span id="consent-text"></span>
-  </label>
-  <p class="err" id="err-consent" role="alert"></p>
-
   <button type="submit" id="submit">Request my quote</button>
   <p class="formerr" id="formerr" role="alert" hidden></p>
 </form>
@@ -180,8 +174,6 @@ function reportHeight() {
   var h = document.documentElement.scrollHeight;
   parent.postMessage({ type: 'yp-form-height', height: h }, '*');
 }
-
-document.getElementById('consent-text').textContent = BOOT.consentText;
 
 BOOT.lines.forEach(function (line) {
   var row = document.createElement('label');
@@ -269,7 +261,7 @@ function showErrors(errors) {
   reportHeight();
 }
 
-['firstName', 'lastName', 'phone', 'email', 'zip', 'consent',
+['firstName', 'lastName', 'phone', 'email', 'zip',
  'businessName', 'employeeCount'].forEach(function (f) {
   var el = document.getElementById(f);
   if (el) el.addEventListener('input', function () { clearError(f); });
@@ -315,7 +307,6 @@ form.addEventListener('submit', function (event) {
     phone: document.getElementById('phone').value,
     email: document.getElementById('email').value,
     zip: document.getElementById('zip').value,
-    consent: document.getElementById('consent').checked,
     website: document.getElementById('website').value,
     pageUrl: meta.pageUrl,
     utm: meta.utm
