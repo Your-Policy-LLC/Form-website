@@ -102,18 +102,6 @@ export function buildMessage(submission, site, consent) {
     elements: [{ type: 'mrkdwn', text: provenance.join('\n') }],
   });
 
-  // The consent record. Verbose on purpose: this message is the only place it
-  // is written down.
-  blocks.push({
-    type: 'context',
-    elements: [
-      {
-        type: 'mrkdwn',
-        text: `Consent (${consent.version}) shown and accepted: "${consent.text}"`,
-      },
-    ],
-  });
-
   // Fallback text for notifications and screen readers, where blocks are not
   // rendered. Without it the push notification is blank.
   const text = `${headline} from ${site.label} (${submission.firstName} ${submission.lastName})`;
