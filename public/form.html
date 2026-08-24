@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Request a Quote</title>
+<style>
+  :root {
+    --ink: #16202c;
+    --muted: #5b6875;
+    --line: #d4dae1;
+    --accent: #0b5cab;
+    --error: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 4px;
+    background: #fff;
+    color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  fieldset { border: 0; margin: 0 0 22px; padding: 0; }
+  legend { font-weight: 650; font-size: 15px; padding: 0 0 8px; }
+  .choices { display: grid; gap: 2px; }
+  .choice {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px;
+    cursor: pointer;
+  }
+  .choice:hover { border-color: var(--accent); }
+  .choice input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+  .choice-all { margin-bottom: 8px; font-weight: 600; background: #f4f7fa; }
+  .grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.span { grid-column: 1 / -1; }
+  label.lbl { font-size: 14px; font-weight: 600; }
+  .hint { font-size: 13px; color: var(--muted); font-weight: 400; }
+  input[type=text], input[type=tel], input[type=email] {
+    padding: 10px; font-size: 16px; border: 1px solid var(--line);
+    border-radius: 6px; font-family: inherit; color: inherit;
+  }
+  input:focus-visible, .choice:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .err { color: var(--error); font-size: 13px; min-height: 0; }
+  .err:empty { display: none; }
+  [aria-invalid=true] { border-color: var(--error); }
+  .consent { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 18px; }
+  .consent input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent); flex: none; }
+  .consent span { font-size: 13px; color: var(--muted); }
+  button {
+    width: 100%; padding: 13px; font-size: 16px; font-weight: 650;
+    font-family: inherit; color: #fff; background: var(--accent);
+    border: 0; border-radius: 6px; cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  button[disabled] { opacity: .6; cursor: default; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .done { padding: 28px 16px; text-align: center; }
+  .done h2 { margin: 0 0 8px; font-size: 20px; }
+  .done p { margin: 0; color: var(--muted); }
+  .formerr {
+    margin: 14px 0 0; padding: 12px; border-radius: 6px;
+    background: #fdecea; color: var(--error); font-size: 14px;
+  }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<form id="quote" novalidate>
+  <fieldset>
+    <legend id="lines-legend">Type of Insurance Quote</legend>
+    <div class="choices" role="group" aria-labelledby="lines-legend" id="lines"></div>
+    <p class="err" id="err-lines" role="alert"></p>
+  </fieldset>
+
+  <div class="grid">
+    <div class="field">
+      <label class="lbl" for="firstName">First name</label>
+      <input id="firstName" name="firstName" type="text" autocomplete="given-name" required>
+      <p class="err" id="err-firstName"></p>
+    </div>
+    <div class="field">
+      <label class="lbl" for="lastName">Last name</label>
+      <input id="lastName" name="lastName" type="text" autocomplete="family-name" required>
+      <p class="err" id="err-lastName"></p>
+    </div>
+    <div class="field">
+      <label class="lbl" for="phone">Phone <span class="hint">(phone or email)</span></label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel">
+      <p class="err" id="err-phone"></p>
+    </div>
+    <div class="field">
+      <label class="lbl" for="email">Email <span class="hint">(phone or email)</span></label>
+      <input id="email" name="email" type="email" autocomplete="email" inputmode="email">
+      <p class="err" id="err-email"></p>
+    </div>
+    <div class="field">
+      <label class="lbl" for="zip">ZIP code</label>
+      <input id="zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="5">
+      <p class="err" id="err-zip"></p>
+    </div>
+  </div>
+
+  <div class="hp" aria-hidden="true">
+    <label for="website">Website</label>
+    <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+  </div>
+
+  <label class="consent">
+    <input id="consent" type="checkbox">
+    <span id="consent-text"></span>
+  </label>
+  <p class="err" id="err-consent" role="alert"></p>
+
+  <button type="submit" id="submit">Request my quote</button>
+  <p class="formerr" id="formerr" role="alert" hidden></p>
+</form>
+
+<div class="done" id="done" hidden role="status">
+  <h2>Thanks, we got it.</h2>
+  <p>An agent will reach out shortly about your request.</p>
+</div>
+
+<script>
+// The server replaces the placeholder below with real config before sending
+// this document. Keeping the lines of business and consent text server-side
+// means the form and the validator can never disagree about what is valid.
+var BOOT = "__BOOTSTRAP__";
+
+var form = document.getElementById('quote');
+var linesBox = document.getElementById('lines');
+
+function reportHeight() {
+  var h = document.documentElement.scrollHeight;
+  parent.postMessage({ type: 'yp-form-height', height: h }, '*');
+}
+
+document.getElementById('consent-text').textContent = BOOT.consentText;
+
+// "Select all" first, then one row per line of business, built from the server
+// list.
+var allRow = document.createElement('label');
+allRow.className = 'choice choice-all';
+allRow.innerHTML = '<input type="checkbox" id="all"><span>Select all</span>';
+linesBox.appendChild(allRow);
+
+BOOT.lines.forEach(function (line) {
+  var row = document.createElement('label');
+  row.className = 'choice';
+  var input = document.createElement('input');
+  input.type = 'checkbox';
+  input.value = line.id;
+  input.className = 'lob';
+  var span = document.createElement('span');
+  span.textContent = line.label;
+  row.appendChild(input);
+  row.appendChild(span);
+  linesBox.appendChild(row);
+});
+
+var all = document.getElementById('all');
+var boxes = Array.prototype.slice.call(document.querySelectorAll('.lob'));
+
+function syncAll() {
+  var checked = boxes.filter(function (b) { return b.checked; }).length;
+  all.checked = checked === boxes.length;
+  all.indeterminate = checked > 0 && checked < boxes.length;
+}
+
+all.addEventListener('change', function () {
+  boxes.forEach(function (b) { b.checked = all.checked; });
+  all.indeterminate = false;
+  clearError('lines');
+});
+
+boxes.forEach(function (b) {
+  b.addEventListener('change', function () { syncAll(); clearError('lines'); });
+});
+
+function clearError(field) {
+  var el = document.getElementById('err-' + field);
+  if (el) el.textContent = '';
+  var input = document.getElementById(field);
+  if (input) input.removeAttribute('aria-invalid');
+}
+
+function showErrors(errors) {
+  Object.keys(errors).forEach(function (field) {
+    var el = document.getElementById('err-' + field);
+    if (el) el.textContent = errors[field];
+    var input = document.getElementById(field);
+    if (input) input.setAttribute('aria-invalid', 'true');
+  });
+  reportHeight();
+}
+
+['firstName', 'lastName', 'phone', 'email', 'zip', 'consent'].forEach(function (f) {
+  var el = document.getElementById(f);
+  if (el) el.addEventListener('input', function () { clearError(f); });
+  if (el && el.type === 'checkbox') el.addEventListener('change', function () { clearError(f); });
+});
+
+// The host page's URL and query string arrive as parameters on this iframe's
+// own URL, set by embed.js. A cross-origin iframe cannot read its parent's
+// location, so this is the only way to know where the form was filled in.
+function provenance() {
+  var mine = new URLSearchParams(location.search);
+  var pageUrl = mine.get('page') || '';
+  var hostQuery = new URLSearchParams(mine.get('q') || '');
+  var utm = {};
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid']
+    .forEach(function (k) {
+      var v = hostQuery.get(k);
+      if (v) utm[k] = v;
+    });
+  return { pageUrl: pageUrl, utm: utm };
+}
+
+var submitBtn = document.getElementById('submit');
+var formErr = document.getElementById('formerr');
+
+form.addEventListener('submit', function (event) {
+  event.preventDefault();
+  formErr.hidden = true;
+
+  var meta = provenance();
+  var payload = {
+    slug: BOOT.slug,
+    lines: boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; }),
+    firstName: document.getElementById('firstName').value,
+    lastName: document.getElementById('lastName').value,
+    phone: document.getElementById('phone').value,
+    email: document.getElementById('email').value,
+    zip: document.getElementById('zip').value,
+    consent: document.getElementById('consent').checked,
+    website: document.getElementById('website').value,
+    pageUrl: meta.pageUrl,
+    utm: meta.utm
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending...';
+
+  fetch('/api/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function (res) {
+      return res.json().catch(function () { return {}; })
+        .then(function (body) { return { status: res.status, body: body }; });
+    })
+    .then(function (r) {
+      if (r.body && r.body.ok) {
+        form.hidden = true;
+        document.getElementById('done').hidden = false;
+        reportHeight();
+        return;
+      }
+      if (r.body && r.body.errors) {
+        showErrors(r.body.errors);
+        return;
+      }
+      // Delivery failed. The prospect is told plainly rather than shown a
+      // thank-you for a lead that no longer exists anywhere.
+      var msg = 'Sorry, we could not send your request. Please try again';
+      msg += BOOT.fallbackPhone ? ', or call us at ' + BOOT.fallbackPhone + '.' : ' in a few minutes.';
+      formErr.textContent = msg;
+      formErr.hidden = false;
+      reportHeight();
+    })
+    .catch(function () {
+      formErr.textContent = 'Sorry, something went wrong. Please check your connection and try again.';
+      formErr.hidden = false;
+      reportHeight();
+    })
+    .then(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Request my quote';
+    });
+});
+
+// Height is reported on load, on any layout change, and after every state
+// change above. ResizeObserver covers the cases the explicit calls miss, such
+// as a long consent string wrapping differently at narrow widths.
+if (window.ResizeObserver) {
+  new ResizeObserver(reportHeight).observe(document.documentElement);
+}
+window.addEventListener('load', reportHeight);
+syncAll();
+reportHeight();
+</script>
+</body>
+</html>
