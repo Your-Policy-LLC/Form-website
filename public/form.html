@@ -141,6 +141,14 @@
       </div>
       <p class="err" id="err-ebContactOk"></p>
     </div>
+    <div id="commercialQuestion" style="margin-top:14px">
+      <div class="lbl" style="margin-bottom:6px">Can we also quote your business insurance?</div>
+      <div style="display:flex;gap:10px">
+        <label class="choice" style="flex:1"><input type="radio" name="commercialQuoteOk" value="yes"><span>Yes</span></label>
+        <label class="choice" style="flex:1"><input type="radio" name="commercialQuoteOk" value="no"><span>No</span></label>
+      </div>
+      <p class="err" id="err-commercialQuoteOk"></p>
+    </div>
   </div>
 
   <label class="consent">
@@ -240,11 +248,12 @@ function syncCommercial() {
   // The cross-sell question is pointless for someone who already asked for
   // employee benefits, so it is hidden and the answer is implied server-side.
   document.getElementById('ebQuestion').hidden = !(has('commercial') && !has('employee-benefits'));
+  document.getElementById('commercialQuestion').hidden = !(has('employee-benefits') && !has('commercial'));
 
   personalBox.hidden = !has('personal');
 
   if (!business) {
-    ['businessName', 'employeeRange', 'ebContactOk']
+    ['businessName', 'employeeRange', 'ebContactOk', 'commercialQuoteOk']
       .forEach(function (f) { var e = document.getElementById('err-' + f); if (e) e.textContent = ''; });
   }
   if (personalBox.hidden) {
@@ -335,11 +344,13 @@ form.addEventListener('submit', function (event) {
   if (boxes.some(function (b) { return b.checked && b.value === 'commercial'; }) ||
       boxes.some(function (b) { return b.checked && b.value === 'employee-benefits'; })) {
     var eb = document.querySelector('input[name="ebContactOk"]:checked');
+    var cq = document.querySelector('input[name="commercialQuoteOk"]:checked');
     payload.businessName = document.getElementById('businessName').value;
     payload.employeeRange = document.getElementById('employeeRange').value;
     // Left undefined when nothing is chosen, so the server can tell "skipped"
     // apart from an explicit no.
     if (eb) payload.ebContactOk = eb.value === 'yes';
+    if (cq) payload.commercialQuoteOk = cq.value === 'yes';
   }
 
   if (boxes.some(function (b) { return b.checked && b.value === 'personal'; })) {
@@ -402,6 +413,9 @@ syncCommercial();
 document.getElementById('employeeRange').addEventListener('change', function () { clearError('employeeRange'); });
 Array.prototype.forEach.call(document.querySelectorAll('input[name="ebContactOk"]'), function (r) {
   r.addEventListener('change', function () { clearError('ebContactOk'); });
+});
+Array.prototype.forEach.call(document.querySelectorAll('input[name="commercialQuoteOk"]'), function (r) {
+  r.addEventListener('change', function () { clearError('commercialQuoteOk'); });
 });
 reportHeight();
 </script>
