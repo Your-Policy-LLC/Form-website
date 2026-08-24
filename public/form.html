@@ -10,14 +10,14 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 20px;
+    padding: 14px;
     background: var(--bg);
     color: var(--text);
     font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
-  fieldset { border: 0; margin: 0 0 16px; padding: 0; }
+  fieldset { border: 0; margin: 0 0 10px; padding: 0; }
   legend { padding: 0 0 6px; }
-  .req-note { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+  .req-note { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
   .star { color: var(--accent); }
   .sec { font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; padding-bottom: 6px; }
   /* Two columns halves the vertical space the checkbox lists take, which is
@@ -27,20 +27,20 @@
   @media (max-width: 520px) { .choices { grid-template-columns: 1fr; } }
   .choice {
     display: flex; align-items: center; gap: 9px;
-    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
     cursor: pointer; font-size: 14px;
   }
   .choice:hover { border-color: var(--accent); }
   .choice input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; flex: none; }
   .choice-all { grid-column: 1 / -1; font-weight: 600; background: var(--field); }
-  .grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  .grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
   @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
-  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field { display: flex; flex-direction: column; gap: 2px; }
   .field.span { grid-column: 1 / -1; }
   label.lbl { font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
   .hint { font-size: 12px; color: var(--muted); font-weight: 400; }
   input[type=text], input[type=tel], input[type=email] {
-    padding: 10px; font-size: 16px; border: 1px solid var(--border);
+    padding: 8px 10px; font-size: 16px; border: 1px solid var(--border);
     border-radius: 6px; font-family: inherit;
     background: var(--field); color: var(--text);
   }
@@ -49,11 +49,11 @@
   .err { color: var(--error); font-size: 12px; min-height: 0; }
   .err:empty { display: none; }
   [aria-invalid=true] { border-color: var(--error); }
-  .consent { display: flex; gap: 9px; align-items: flex-start; margin: 4px 0 14px; }
+  .consent { display: flex; gap: 9px; align-items: flex-start; margin: 2px 0 10px; }
   .consent input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
   .consent span { font-size: 12px; line-height: 1.4; color: var(--muted); }
   button {
-    width: 100%; padding: 12px; font-size: 15px; font-weight: 650;
+    width: 100%; padding: 10px; font-size: 15px; font-weight: 650;
     font-family: inherit; color: var(--accentText); background: var(--accent);
     border: 0; border-radius: 6px; cursor: pointer;
   }
