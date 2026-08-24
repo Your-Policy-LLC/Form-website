@@ -35,6 +35,15 @@ export const DEFAULT_THEME = {
 };
 
 export const SITES = {
+  // The bare domain serves this rather than a real agency, so a test run at the
+  // preview URL is never mistaken for a lead from a client's website. Its label
+  // is deliberately unmissable in Slack. allowedOrigins is empty, which makes
+  // frame-ancestors 'none': this slug renders for a human visiting directly and
+  // refuses to embed anywhere.
+  preview: {
+    label: 'PREVIEW — test submission, not a real lead',
+    allowedOrigins: [],
+  },
   'insure-mt': {
     // TODO(confirm): "Insure MT" is inferred from the live domain insuremt.com.
     // The WP Engine install is named galinsurance, so the agency may go by a
