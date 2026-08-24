@@ -299,8 +299,15 @@ function showErrors(errors) {
 // location, so this is the only way to know where the form was filled in.
 function provenance() {
   var mine = new URLSearchParams(location.search);
-  var pageUrl = mine.get('page') || '';
-  var hostQuery = new URLSearchParams(mine.get('q') || '');
+  // Embedded: embed.js passes the host page's address, because a cross-origin
+  // iframe cannot read its parent's location. Not embedded: this document IS
+  // the page the person filled out, so record its own URL. Recording nothing
+  // would look like a capture failure rather than a direct visit.
+  var embedded = mine.has('page');
+  var pageUrl = embedded ? mine.get('page') : (location.origin + location.pathname);
+  // Same split for campaign tags: forwarded by embed.js when embedded, read
+  // from this document's own query string when the form is visited directly.
+  var hostQuery = new URLSearchParams(embedded ? (mine.get('q') || '') : location.search);
   var utm = {};
   ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid']
     .forEach(function (k) {
