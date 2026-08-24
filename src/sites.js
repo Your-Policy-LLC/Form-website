@@ -45,10 +45,9 @@ export const SITES = {
     allowedOrigins: [],
   },
   'insure-mt': {
-    // TODO(confirm): "Insure MT" is inferred from the live domain insuremt.com.
-    // The WP Engine install is named galinsurance, so the agency may go by a
-    // different name in conversation. This string is what producers see.
-    label: 'Insure MT',
+    // Slug retained until the domain cutover; update it then. Label reflects the
+    // agency name as it should read in #pc-referral.
+    label: 'Gallatin Insurance',
     allowedOrigins: [
       'https://galinsurance.wpenginepowered.com',
       'https://insuremt.com',
