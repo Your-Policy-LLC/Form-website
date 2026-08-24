@@ -73,6 +73,8 @@ app.get('/healthz', async (_req, res) => {
     dbReady,
     migrationError: dbError,
     slack: config.slackDryRun ? 'dry-run' : 'configured',
+    slackChannel: config.slackChannel,
+    lastNotify,
     consentApproved: CONSENT.approved,
     sites: Object.keys(SITES).length,
   });
@@ -186,10 +188,17 @@ app.post('/api/submit', async (req, res) => {
   return undefined;
 });
 
+// Last Slack delivery outcome, exposed on /healthz. Slack posts after the HTTP
+// response is sent, so a failure is invisible to the caller and lives only in
+// runtime logs. Surfacing the reason makes it diagnosable without log access.
+// Reason strings only, never lead content.
+let lastNotify = { at: null, ok: null, reason: null };
+
 async function notifySlack(row, submission, site) {
   try {
     await recordAttempt(row.id);
     const result = await deliver(buildMessage(submission, site, CONSENT));
+    lastNotify = { at: new Date().toISOString(), ok: result.delivered, reason: result.reason };
     if (!result.delivered) {
       console.error(`[notify] failed id=${row.id} reason=${result.reason}`);
       return;
@@ -199,6 +208,7 @@ async function notifySlack(row, submission, site) {
     const claimed = await markNotified(row.id, result.ts);
     console.log(`[notify] ${claimed ? 'marked' : 'skipped: already marked'} id=${row.id}`);
   } catch (err) {
+    lastNotify = { at: new Date().toISOString(), ok: false, reason: `exception: ${err.message}` };
     console.error(`[notify] error id=${row.id} message=${err.message}`);
   }
 }
