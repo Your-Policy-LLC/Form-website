@@ -184,13 +184,6 @@ function reportHeight() {
 
 document.getElementById('consent-text').textContent = BOOT.consentText;
 
-// "Select all" first, then one row per line of business, built from the server
-// list.
-var allRow = document.createElement('label');
-allRow.className = 'choice choice-all';
-allRow.innerHTML = '<input type="checkbox" id="all"><span>Select all</span>';
-linesBox.appendChild(allRow);
-
 BOOT.lines.forEach(function (line) {
   var row = document.createElement('label');
   row.className = 'choice';
@@ -205,7 +198,6 @@ BOOT.lines.forEach(function (line) {
   linesBox.appendChild(row);
 });
 
-var all = document.getElementById('all');
 var boxes = Array.prototype.slice.call(document.querySelectorAll('.lob'));
 
 var commercialBox = document.getElementById('commercial');
@@ -257,21 +249,8 @@ function syncCommercial() {
   reportHeight();
 }
 
-function syncAll() {
-  var checked = boxes.filter(function (b) { return b.checked; }).length;
-  all.checked = checked === boxes.length;
-  all.indeterminate = checked > 0 && checked < boxes.length;
-}
-
-all.addEventListener('change', function () {
-  boxes.forEach(function (b) { b.checked = all.checked; });
-  all.indeterminate = false;
-  syncCommercial();
-  clearError('lines');
-});
-
 boxes.forEach(function (b) {
-  b.addEventListener('change', function () { syncAll(); syncCommercial(); clearError('lines'); });
+  b.addEventListener('change', function () { syncCommercial(); clearError('lines'); });
 });
 
 function clearError(field) {
@@ -410,7 +389,6 @@ if (window.ResizeObserver) {
   new ResizeObserver(reportHeight).observe(document.documentElement);
 }
 window.addEventListener('load', reportHeight);
-syncAll();
 syncCommercial();
 
 Array.prototype.forEach.call(document.querySelectorAll('input[name="ebContactOk"]'), function (r) {
