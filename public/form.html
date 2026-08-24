@@ -109,6 +109,48 @@
     <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
   </div>
 
+  <div id="commercial" hidden style="border-top:1px solid var(--line);margin-top:20px;padding-top:18px">
+    <div style="font-weight:650;font-size:15px;padding-bottom:4px">Business details</div>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Needed for a commercial quote.</p>
+    <div class="grid">
+      <div class="field span">
+        <label class="lbl" for="businessName">Business name</label>
+        <input id="businessName" type="text" autocomplete="organization">
+        <p class="err" id="err-businessName"></p>
+      </div>
+      <div class="field">
+        <label class="lbl" for="businessPhone">Business phone</label>
+        <input id="businessPhone" type="tel" inputmode="tel">
+        <p class="err" id="err-businessPhone"></p>
+      </div>
+      <div class="field">
+        <label class="lbl" for="businessEmail">Business email</label>
+        <input id="businessEmail" type="email" inputmode="email">
+        <p class="err" id="err-businessEmail"></p>
+      </div>
+      <div class="field">
+        <label class="lbl" for="businessZip">Business ZIP code</label>
+        <input id="businessZip" type="text" inputmode="numeric" maxlength="5">
+        <p class="err" id="err-businessZip"></p>
+      </div>
+      <div class="field">
+        <label class="lbl" for="employeeRange">Number of employees</label>
+        <select id="employeeRange" style="padding:10px;font-size:16px;border:1px solid var(--line);border-radius:6px;font-family:inherit;color:inherit;background:#fff">
+          <option value="">Select...</option>
+        </select>
+        <p class="err" id="err-employeeRange"></p>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="lbl" style="margin-bottom:6px">Would you like an employee benefits representative to reach out?</div>
+      <div style="display:flex;gap:10px">
+        <label class="choice" style="flex:1"><input type="radio" name="ebContactOk" value="yes"><span>Yes</span></label>
+        <label class="choice" style="flex:1"><input type="radio" name="ebContactOk" value="no"><span>No</span></label>
+      </div>
+      <p class="err" id="err-ebContactOk"></p>
+    </div>
+  </div>
+
   <label class="consent">
     <input id="consent" type="checkbox">
     <span id="consent-text"></span>
@@ -164,6 +206,28 @@ BOOT.lines.forEach(function (line) {
 var all = document.getElementById('all');
 var boxes = Array.prototype.slice.call(document.querySelectorAll('.lob'));
 
+var commercialBox = document.getElementById('commercial');
+var rangeSelect = document.getElementById('employeeRange');
+BOOT.employeeRanges.forEach(function (r) {
+  var o = document.createElement('option');
+  o.value = r.id;
+  o.textContent = r.label;
+  rangeSelect.appendChild(o);
+});
+
+// Shown only while Commercial is selected. Deselecting hides the section and
+// clears its errors, so a stale message cannot survive on a hidden field and
+// block submission with nothing visible to fix.
+function syncCommercial() {
+  var on = boxes.some(function (b) { return b.checked && b.value === 'commercial'; });
+  commercialBox.hidden = !on;
+  if (!on) {
+    ['businessName', 'businessPhone', 'businessEmail', 'businessZip', 'employeeRange', 'ebContactOk']
+      .forEach(function (f) { var e = document.getElementById('err-' + f); if (e) e.textContent = ''; });
+  }
+  reportHeight();
+}
+
 function syncAll() {
   var checked = boxes.filter(function (b) { return b.checked; }).length;
   all.checked = checked === boxes.length;
@@ -173,11 +237,12 @@ function syncAll() {
 all.addEventListener('change', function () {
   boxes.forEach(function (b) { b.checked = all.checked; });
   all.indeterminate = false;
+  syncCommercial();
   clearError('lines');
 });
 
 boxes.forEach(function (b) {
-  b.addEventListener('change', function () { syncAll(); clearError('lines'); });
+  b.addEventListener('change', function () { syncAll(); syncCommercial(); clearError('lines'); });
 });
 
 function clearError(field) {
@@ -197,7 +262,8 @@ function showErrors(errors) {
   reportHeight();
 }
 
-['firstName', 'lastName', 'phone', 'email', 'zip', 'consent'].forEach(function (f) {
+['firstName', 'lastName', 'phone', 'email', 'zip', 'consent',
+ 'businessName', 'businessPhone', 'businessEmail', 'businessZip', 'employeeRange'].forEach(function (f) {
   var el = document.getElementById(f);
   if (el) el.addEventListener('input', function () { clearError(f); });
   if (el && el.type === 'checkbox') el.addEventListener('change', function () { clearError(f); });
@@ -240,6 +306,18 @@ form.addEventListener('submit', function (event) {
     pageUrl: meta.pageUrl,
     utm: meta.utm
   };
+
+  if (boxes.some(function (b) { return b.checked && b.value === 'commercial'; })) {
+    var eb = document.querySelector('input[name="ebContactOk"]:checked');
+    payload.businessName = document.getElementById('businessName').value;
+    payload.businessPhone = document.getElementById('businessPhone').value;
+    payload.businessEmail = document.getElementById('businessEmail').value;
+    payload.businessZip = document.getElementById('businessZip').value;
+    payload.employeeRange = document.getElementById('employeeRange').value;
+    // Left undefined when nothing is chosen, so the server can tell "skipped"
+    // apart from an explicit no.
+    if (eb) payload.ebContactOk = eb.value === 'yes';
+  }
 
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sending...';
@@ -291,6 +369,11 @@ if (window.ResizeObserver) {
 }
 window.addEventListener('load', reportHeight);
 syncAll();
+syncCommercial();
+document.getElementById('employeeRange').addEventListener('change', function () { clearError('employeeRange'); });
+Array.prototype.forEach.call(document.querySelectorAll('input[name="ebContactOk"]'), function (r) {
+  r.addEventListener('change', function () { clearError('ebContactOk'); });
+});
 reportHeight();
 </script>
 </body>
