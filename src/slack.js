@@ -63,9 +63,6 @@ export function buildMessage(submission, site, consent) {
       fields: [
         { type: 'mrkdwn', text: `*Business:*\n${c.name}` },
         { type: 'mrkdwn', text: `*Employees:*\n${c.range || 'not given'}` },
-        { type: 'mrkdwn', text: `*Business phone:*\n${formatPhone(c.phone)}` },
-        { type: 'mrkdwn', text: `*Business email:*\n${c.email || 'not given'}` },
-        { type: 'mrkdwn', text: `*Business ZIP:*\n${c.zip || 'not given'}` },
         { type: 'mrkdwn', text: `*Employee benefits contact:*\n${c.ebOk ? 'YES, wants a rep' : 'No'}` },
       ],
     });

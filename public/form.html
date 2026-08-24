@@ -119,21 +119,6 @@
         <p class="err" id="err-businessName"></p>
       </div>
       <div class="field">
-        <label class="lbl" for="businessPhone">Business phone</label>
-        <input id="businessPhone" type="tel" inputmode="tel">
-        <p class="err" id="err-businessPhone"></p>
-      </div>
-      <div class="field">
-        <label class="lbl" for="businessEmail">Business email</label>
-        <input id="businessEmail" type="email" inputmode="email">
-        <p class="err" id="err-businessEmail"></p>
-      </div>
-      <div class="field">
-        <label class="lbl" for="businessZip">Business ZIP code</label>
-        <input id="businessZip" type="text" inputmode="numeric" maxlength="5">
-        <p class="err" id="err-businessZip"></p>
-      </div>
-      <div class="field">
         <label class="lbl" for="employeeRange">Number of employees</label>
         <select id="employeeRange" style="padding:10px;font-size:16px;border:1px solid var(--line);border-radius:6px;font-family:inherit;color:inherit;background:#fff">
           <option value="">Select...</option>
@@ -222,7 +207,7 @@ function syncCommercial() {
   var on = boxes.some(function (b) { return b.checked && b.value === 'commercial'; });
   commercialBox.hidden = !on;
   if (!on) {
-    ['businessName', 'businessPhone', 'businessEmail', 'businessZip', 'employeeRange', 'ebContactOk']
+    ['businessName', 'employeeRange', 'ebContactOk']
       .forEach(function (f) { var e = document.getElementById('err-' + f); if (e) e.textContent = ''; });
   }
   reportHeight();
@@ -263,7 +248,7 @@ function showErrors(errors) {
 }
 
 ['firstName', 'lastName', 'phone', 'email', 'zip', 'consent',
- 'businessName', 'businessPhone', 'businessEmail', 'businessZip', 'employeeRange'].forEach(function (f) {
+ 'businessName', 'employeeRange'].forEach(function (f) {
   var el = document.getElementById(f);
   if (el) el.addEventListener('input', function () { clearError(f); });
   if (el && el.type === 'checkbox') el.addEventListener('change', function () { clearError(f); });
@@ -310,9 +295,6 @@ form.addEventListener('submit', function (event) {
   if (boxes.some(function (b) { return b.checked && b.value === 'commercial'; })) {
     var eb = document.querySelector('input[name="ebContactOk"]:checked');
     payload.businessName = document.getElementById('businessName').value;
-    payload.businessPhone = document.getElementById('businessPhone').value;
-    payload.businessEmail = document.getElementById('businessEmail').value;
-    payload.businessZip = document.getElementById('businessZip').value;
     payload.employeeRange = document.getElementById('employeeRange').value;
     // Left undefined when nothing is chosen, so the server can tell "skipped"
     // apart from an explicit no.
