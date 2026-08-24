@@ -91,27 +91,16 @@ export function validateSubmission(body) {
     errors.consent = 'Please agree before submitting.';
   }
 
-  // Commercial expands the form. These are required only when it is selected,
-  // and are stored as null otherwise so a personal lead is not carrying empty
-  // strings that look like answered-but-blank.
+  // Business phone, email and ZIP were deliberately removed: the contact block
+  // above already collects all three, and asking twice cost conversion while
+  // producing two values with no rule for which one wins. The columns remain in
+  // the schema, nullable and unused, so restoring any of them is a form change
+  // rather than a migration.
   const commercial = { name: null, phone: null, email: null, zip: null, range: null, ebOk: null };
 
   if (lines.includes('commercial')) {
     commercial.name = str(body?.businessName, 160);
     if (!commercial.name) errors.businessName = 'Business name is required.';
-
-    const bPhoneRaw = str(body?.businessPhone, 40);
-    commercial.phone = bPhoneRaw ? normalisePhone(bPhoneRaw) : null;
-    if (!bPhoneRaw) errors.businessPhone = 'Business phone is required.';
-    else if (!commercial.phone) errors.businessPhone = 'Enter a 10-digit phone number.';
-
-    const bEmailRaw = str(body?.businessEmail, 254).toLowerCase();
-    commercial.email = bEmailRaw && EMAIL_RE.test(bEmailRaw) ? bEmailRaw : null;
-    if (!bEmailRaw) errors.businessEmail = 'Business email is required.';
-    else if (!commercial.email) errors.businessEmail = 'Enter a valid email address.';
-
-    commercial.zip = str(body?.businessZip, 10);
-    if (!/^\d{5}$/.test(commercial.zip)) errors.businessZip = 'Enter a 5-digit ZIP code.';
 
     commercial.range = str(body?.employeeRange, 20);
     if (!RANGE_IDS.has(commercial.range)) errors.employeeRange = 'Choose a number of employees.';
