@@ -107,10 +107,6 @@ export function validateSubmission(body) {
   const zip = str(body?.zip, 10);
   if (!/^\d{5}$/.test(zip)) errors.zip = 'Enter a 5-digit ZIP code.';
 
-  if (body?.consent !== true) {
-    errors.consent = 'Please agree before submitting.';
-  }
-
   // Business phone, email and ZIP were deliberately removed: the contact block
   // above already collects all three, and asking twice cost conversion while
   // producing two values with no rule for which one wins. The columns remain in
