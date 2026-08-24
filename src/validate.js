@@ -35,9 +35,10 @@ const RANGE_IDS = new Set(EMPLOYEE_RANGES.map((r) => r.id));
 export const PERSONAL_PRODUCTS = [
   { id: 'home', label: 'Home' },
   { id: 'auto', label: 'Auto' },
+  { id: 'motorcycle', label: 'Motorcycle' },
   { id: 'flood', label: 'Flood' },
   { id: 'renters', label: 'Renters' },
-  { id: 'toys', label: 'Toys (boat, ATV/UTV, snowmobile, motorcycle)' },
+  { id: 'toys', label: 'Toys (boat, ATV/UTV, snowmobile)' },
   { id: 'rv', label: 'RV' },
 ];
 
@@ -115,7 +116,7 @@ export function validateSubmission(body) {
   // producing two values with no rule for which one wins. The columns remain in
   // the schema, nullable and unused, so restoring any of them is a form change
   // rather than a migration.
-  const commercial = { name: null, range: null, ebOk: null };
+  const commercial = { name: null, range: null, ebOk: null, commercialOk: null };
   const wantsCommercial = lines.includes('commercial');
   const wantsBenefits = lines.includes('employee-benefits');
 
@@ -128,17 +129,27 @@ export function validateSubmission(body) {
     if (!RANGE_IDS.has(commercial.range)) errors.employeeRange = 'Choose a number of employees.';
   }
 
-  if (wantsBenefits) {
-    // Selecting the line is a stronger signal than answering yes to a prompt,
-    // so the cross-sell question is not asked and the answer is implied.
-    commercial.ebOk = true;
-  } else if (wantsCommercial) {
+  // Each line implies interest in itself, and each is offered the other. When
+  // both are selected there is nothing left to cross-sell, so neither question
+  // is asked and both are recorded true.
+  if (wantsCommercial) commercial.commercialOk = true;
+  if (wantsBenefits) commercial.ebOk = true;
+
+  if (wantsCommercial && !wantsBenefits) {
     // Strict boolean. An absent value means the question was skipped, which is
     // different from answering no, and must not be silently coerced to false.
     if (typeof body?.ebContactOk !== 'boolean') {
       errors.ebContactOk = 'Please choose yes or no.';
     } else {
       commercial.ebOk = body.ebContactOk;
+    }
+  }
+
+  if (wantsBenefits && !wantsCommercial) {
+    if (typeof body?.commercialQuoteOk !== 'boolean') {
+      errors.commercialQuoteOk = 'Please choose yes or no.';
+    } else {
+      commercial.commercialOk = body.commercialQuoteOk;
     }
   }
 

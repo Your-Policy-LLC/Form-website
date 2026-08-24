@@ -62,12 +62,18 @@ export function buildMessage(submission, site, consent) {
       { type: 'mrkdwn', text: `*Business:*\n${c.name}` },
       { type: 'mrkdwn', text: `*Employees:*\n${c.range || 'not given'}` },
     ];
-    // Only meaningful for a commercial lead that did not already select the
-    // benefits line; for those it is implied and saying so would be noise.
+    // Each cross-sell answer is shown only when it was actually asked, so a
+    // producer reading the lead never sees a field the prospect never saw.
     if (!submission.lines.includes('employee-benefits')) {
       fields.push({
         type: 'mrkdwn',
         text: `*Employee benefits contact:*\n${c.ebOk ? 'YES, wants a rep' : 'No'}`,
+      });
+    }
+    if (!submission.lines.includes('commercial')) {
+      fields.push({
+        type: 'mrkdwn',
+        text: `*Business insurance quote:*\n${c.commercialOk ? 'YES, wants a quote' : 'No'}`,
       });
     }
     blocks.push({ type: 'section', fields });
