@@ -87,13 +87,9 @@ app.get('/embed.js', (_req, res) => {
 // The iframe document. The CSP is built per slug, which is what actually
 // enforces where this form may appear: a site not in allowedOrigins gets the
 // header refusing to frame it, and the browser blanks the embed.
-app.get('/f/:slug', (req, res) => {
-  const site = getSite(req.params.slug);
-  if (!site) {
-    console.warn(`[form] unknown slug requested slug=${req.params.slug}`);
-    return res.status(404).type('text/plain').send('Unknown form.');
-  }
-
+// Renders the iframe document for a site. Shared by the slug route and the
+// root route so the two can never drift.
+function renderForm(site, res) {
   const bootstrap = {
     slug: site.slug,
     lines: LINES_OF_BUSINESS,
@@ -102,12 +98,32 @@ app.get('/f/:slug', (req, res) => {
   };
 
   res.set('Content-Security-Policy', frameAncestorsFor(site));
-  // The legacy header understands no allowlist beyond a single origin, so it is
-  // deliberately not set. Modern browsers use frame-ancestors above.
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('Referrer-Policy', 'no-referrer');
   res.type('html');
   res.send(formTemplate.replace('"__BOOTSTRAP__"', JSON.stringify(bootstrap)));
+}
+
+// The root serves the default site's form so the bare domain is directly
+// usable for previewing. Attribution still comes from a named site, never an
+// anonymous one: a submission here is recorded against DEFAULT_SITE_SLUG.
+// Embeds always use /f/:slug explicitly, so this path is for humans.
+app.get('/', (_req, res) => {
+  const site = getSite(config.defaultSiteSlug || Object.keys(SITES)[0]);
+  if (!site) {
+    console.error(`[form] default site slug is not in the registry: ${config.defaultSiteSlug}`);
+    return res.status(404).type('text/plain').send('No default form configured.');
+  }
+  return renderForm(site, res);
+});
+
+app.get('/f/:slug', (req, res) => {
+  const site = getSite(req.params.slug);
+  if (!site) {
+    console.warn(`[form] unknown slug requested slug=${req.params.slug}`);
+    return res.status(404).type('text/plain').send('Unknown form.');
+  }
+  return renderForm(site, res);
 });
 
 app.post('/api/submit', async (req, res) => {

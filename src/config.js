@@ -33,6 +33,10 @@ function readEnv() {
     isProduction,
     slackBotToken,
     databaseUrl: process.env.DATABASE_URL,
+    // Which site the bare domain renders. Embeds always name their slug
+    // explicitly, so this only affects someone visiting the root by hand.
+    // Null falls back to the first site in the registry.
+    defaultSiteSlug: process.env.DEFAULT_SITE_SLUG || null,
     // Channel the referral lands in. A variable rather than a hardcoded string
     // so a channel rename, or a later move to per-line-of-business channels,
     // is a config change instead of a code deploy.
