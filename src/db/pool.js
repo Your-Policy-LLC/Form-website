@@ -7,6 +7,16 @@ import { config } from '../config.js';
 // possible; internal connections skip it entirely.
 const isInternal = /\.railway\.internal/.test(config.databaseUrl || '');
 
+// Host only, never the credentials. Without this a connection failure gives no
+// clue whether the URL resolved to the internal host or the public proxy, which
+// is the first thing you need to know.
+try {
+  const parsed = new URL(config.databaseUrl);
+  console.log(`[db] host=${parsed.hostname} ssl=${isInternal ? 'off' : 'on (unverified)'}`);
+} catch {
+  console.error('[db] DATABASE_URL is not a parseable URL');
+}
+
 export const pool = new pg.Pool({
   connectionString: config.databaseUrl,
   ssl: isInternal ? false : { rejectUnauthorized: false },

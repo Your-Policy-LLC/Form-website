@@ -5,7 +5,9 @@
 -- so a purge horizon can be applied later as a single delete rather than a
 -- migration.
 
-create extension if not exists pgcrypto;
+-- gen_random_uuid() is core since Postgres 13, so no extension is needed.
+-- Creating one would also require privileges a managed database user may not
+-- have, which is a deploy failure for no gain.
 
 create table if not exists submissions (
   id                uuid primary key default gen_random_uuid(),
