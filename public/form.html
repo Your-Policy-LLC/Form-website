@@ -10,46 +10,50 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 24px;
+    padding: 20px;
     background: var(--bg);
     color: var(--text);
-    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
-  fieldset { border: 0; margin: 0 0 22px; padding: 0; }
-  legend { padding: 0 0 8px; }
-  .req-note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+  fieldset { border: 0; margin: 0 0 16px; padding: 0; }
+  legend { padding: 0 0 6px; }
+  .req-note { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
   .star { color: var(--accent); }
-  .sec { font-size: 12px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; padding-bottom: 8px; }
-  .choices { display: grid; gap: 2px; }
+  .sec { font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; padding-bottom: 6px; }
+  /* Two columns halves the vertical space the checkbox lists take, which is
+     what actually makes the form feel long. Collapses to one column on narrow
+     screens, where two would be unreadably cramped. */
+  .choices { display: grid; gap: 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 520px) { .choices { grid-template-columns: 1fr; } }
   .choice {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px;
-    cursor: pointer;
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    cursor: pointer; font-size: 14px;
   }
   .choice:hover { border-color: var(--accent); }
-  .choice input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
-  .choice-all { margin-bottom: 8px; font-weight: 600; background: var(--field); }
-  .grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
-  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
-  .field { display: flex; flex-direction: column; gap: 5px; }
+  .choice input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; flex: none; }
+  .choice-all { grid-column: 1 / -1; font-weight: 600; background: var(--field); }
+  .grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 4px; }
   .field.span { grid-column: 1 / -1; }
-  label.lbl { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
-  .hint { font-size: 13px; color: var(--muted); font-weight: 400; }
+  label.lbl { font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+  .hint { font-size: 12px; color: var(--muted); font-weight: 400; }
   input[type=text], input[type=tel], input[type=email] {
-    padding: 12px; font-size: 16px; border: 1px solid var(--border);
+    padding: 10px; font-size: 16px; border: 1px solid var(--border);
     border-radius: 6px; font-family: inherit;
     background: var(--field); color: var(--text);
   }
   input::placeholder { color: var(--muted); opacity: .75; }
   input:focus-visible, .choice:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .err { color: var(--error); font-size: 13px; min-height: 0; }
+  .err { color: var(--error); font-size: 12px; min-height: 0; }
   .err:empty { display: none; }
   [aria-invalid=true] { border-color: var(--error); }
-  .consent { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 18px; }
-  .consent input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent); flex: none; }
-  .consent span { font-size: 13px; color: var(--muted); }
+  .consent { display: flex; gap: 9px; align-items: flex-start; margin: 4px 0 14px; }
+  .consent input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+  .consent span { font-size: 12px; line-height: 1.4; color: var(--muted); }
   button {
-    width: 100%; padding: 13px; font-size: 16px; font-weight: 650;
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 650;
     font-family: inherit; color: var(--accentText); background: var(--accent);
     border: 0; border-radius: 6px; cursor: pointer;
   }
@@ -57,7 +61,7 @@
   button[disabled] { opacity: .6; cursor: default; }
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   .done { padding: 28px 16px; text-align: center; }
-  .done h2 { margin: 0 0 8px; font-size: 20px; }
+  .done h2 { margin: 0 0 6px; font-size: 18px; }
   .done p { margin: 0; color: var(--muted); }
   .formerr {
     margin: 14px 0 0; padding: 12px; border-radius: 6px;
@@ -109,16 +113,16 @@
     <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
   </div>
 
-  <div id="personal" hidden style="border-top:1px solid var(--border);margin-top:20px;padding-top:18px">
+  <div id="personal" hidden style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
     <div class="sec">What would you like quoted? <span class="star">*</span></div>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Choose all that apply.</p>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Choose all that apply.</p>
     <div class="choices" id="products"></div>
     <p class="err" id="err-personalProducts" role="alert"></p>
   </div>
 
-  <div id="commercial" hidden style="border-top:1px solid var(--border);margin-top:20px;padding-top:18px">
+  <div id="commercial" hidden style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
     <div class="sec">Business details</div>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Needed for a commercial or employee benefits quote.</p>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Needed for a commercial or employee benefits quote.</p>
     <div class="grid">
       <div class="field span">
         <label class="lbl" for="businessName">Business name <span class="star">*</span></label>
@@ -131,7 +135,7 @@
         <p class="err" id="err-employeeCount"></p>
       </div>
     </div>
-    <div id="ebQuestion" style="margin-top:14px">
+    <div id="ebQuestion" style="margin-top:12px">
       <div class="lbl" style="margin-bottom:6px">Would you like an employee benefits representative to reach out?</div>
       <div style="display:flex;gap:10px">
         <label class="choice" style="flex:1"><input type="radio" name="ebContactOk" value="yes"><span>Yes</span></label>
@@ -139,7 +143,7 @@
       </div>
       <p class="err" id="err-ebContactOk"></p>
     </div>
-    <div id="commercialQuestion" style="margin-top:14px">
+    <div id="commercialQuestion" style="margin-top:12px">
       <div class="lbl" style="margin-bottom:6px">Can we also quote your business insurance?</div>
       <div style="display:flex;gap:10px">
         <label class="choice" style="flex:1"><input type="radio" name="commercialQuoteOk" value="yes"><span>Yes</span></label>
