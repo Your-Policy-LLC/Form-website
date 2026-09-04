@@ -44,6 +44,18 @@ export const SITES = {
     label: 'PREVIEW — test submission, not a real lead',
     allowedOrigins: [],
   },
+  'larsen-flynn': {
+    // TODO(confirm): label inferred from the WP Engine install name. This is
+    // what producers read at the top of every lead from this site, so correct
+    // it if the agency goes by something else.
+    label: 'Larsen Flynn',
+    allowedOrigins: [
+      'https://larsenflynn.wpenginepowered.com',
+      // TODO: add the live domain and its www variant BEFORE the site goes
+      // live. A domain missing from this list renders the form blank, and the
+      // cutover is exactly when nobody is watching.
+    ],
+  },
   'insure-mt': {
     // Slug retained until the domain cutover; update it then. Label reflects the
     // agency name as it should read in #pc-referral.
