@@ -51,9 +51,8 @@ export const SITES = {
     label: 'Larsen Flynn',
     allowedOrigins: [
       'https://larsenflynn.wpenginepowered.com',
-      // TODO: add the live domain and its www variant BEFORE the site goes
-      // live. A domain missing from this list renders the form blank, and the
-      // cutover is exactly when nobody is watching.
+      'https://www.larsenflynn.com',
+      'https://larsenflynn.com',
     ],
   },
   'insure-mt': {
