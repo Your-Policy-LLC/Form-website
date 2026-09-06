@@ -75,6 +75,7 @@ app.get('/healthz', async (_req, res) => {
     slack: config.slackDryRun ? 'dry-run' : 'configured',
     slackChannel: config.slackChannel,
     lastNotify,
+    recentEmbeds,
     consentApproved: CONSENT.approved,
     sites: Object.keys(SITES).length,
   });
@@ -82,7 +83,9 @@ app.get('/healthz', async (_req, res) => {
 
 app.get('/embed.js', (_req, res) => {
   res.type('application/javascript');
-  res.set('Cache-Control', 'public, max-age=300');
+  // Short deliberately. This file is cached on every client site, so a long TTL
+  // means a loader fix takes that long to reach pages that are already broken.
+  res.set('Cache-Control', 'public, max-age=60');
   res.send(embedScript);
 });
 
@@ -91,6 +94,35 @@ app.get('/embed.js', (_req, res) => {
 // header refusing to frame it, and the browser blanks the embed.
 // Renders the iframe document for a site. Shared by the slug route and the
 // root route so the two can never drift.
+// Recent embed attempts, newest first. When a browser loads the iframe it sends
+// the host page as Referer, which is precisely the origin that must appear in
+// allowedOrigins. Recording it turns "the form is blank on their site" into a
+// question answerable from /healthz rather than from someone's browser console.
+const recentEmbeds = [];
+
+function recordEmbed(site, referer) {
+  if (!referer) return;
+  let origin;
+  try {
+    origin = new URL(referer).origin;
+  } catch {
+    return;
+  }
+  const allowed = site.allowedOrigins.includes(origin);
+  // Collapse repeats so one busy page cannot push the others out of the buffer.
+  const seen = recentEmbeds.find((e) => e.slug === site.slug && e.origin === origin);
+  if (seen) {
+    seen.at = new Date().toISOString();
+    seen.count += 1;
+    return;
+  }
+  recentEmbeds.unshift({ slug: site.slug, origin, allowed, at: new Date().toISOString(), count: 1 });
+  if (recentEmbeds.length > 20) recentEmbeds.pop();
+  if (!allowed) {
+    console.warn(`[embed] BLOCKED origin=${origin} slug=${site.slug} not in allowedOrigins`);
+  }
+}
+
 function renderForm(site, res) {
   const bootstrap = {
     slug: site.slug,
@@ -130,6 +162,7 @@ app.get('/f/:slug', (req, res) => {
     console.warn(`[form] unknown slug requested slug=${req.params.slug}`);
     return res.status(404).type('text/plain').send('Unknown form.');
   }
+  recordEmbed(site, req.get('referer'));
   return renderForm(site, res);
 });
 
