@@ -175,6 +175,11 @@ function reportHeight() {
   parent.postMessage({ type: 'yp-form-height', height: h }, '*');
 }
 
+// Tells the host page the form actually rendered. embed.js waits for this; if
+// it never arrives, the frame was blocked and the loader shows why instead of
+// leaving a silent blank space on the page.
+parent.postMessage({ type: 'yp-form-ready', slug: BOOT.slug }, '*');
+
 BOOT.lines.forEach(function (line) {
   var row = document.createElement('label');
   row.className = 'choice';

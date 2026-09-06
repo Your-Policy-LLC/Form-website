@@ -35,6 +35,38 @@
 
   script.parentNode.insertBefore(iframe, script);
 
+  // A blocked frame renders nothing and reports nothing, which is how a broken
+  // embed sits unnoticed on a live site. The form posts 'yp-form-ready' once it
+  // renders; if that never arrives, something stopped it and we say so rather
+  // than leaving blank space.
+  var ready = false;
+
+  function showFailure() {
+    if (ready) return;
+    var host = window.location.origin;
+    console.error(
+      '[yp-form] the quote form did not load.\n' +
+      'slug: ' + slug + '\n' +
+      'this page origin: ' + host + '\n' +
+      'Most likely: this origin is not in the allowed list for this slug, so the ' +
+      'browser refused to display it. The origin must match exactly, including ' +
+      'http vs https and the www prefix. Send the origin above to whoever ' +
+      'maintains the form and it can be added.'
+    );
+    iframe.style.display = 'none';
+    var box = document.createElement('div');
+    box.setAttribute('data-yp-form-error', slug);
+    box.style.cssText =
+      'padding:16px;border:1px solid #d4a0a0;border-radius:6px;background:#fdf3f3;' +
+      'color:#7a2d2d;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+    box.textContent =
+      'The quote form could not be displayed on this page. ' +
+      'If you manage this site, open the browser console for details.';
+    iframe.parentNode.insertBefore(box, iframe);
+  }
+
+  setTimeout(showFailure, 5000);
+
   window.addEventListener('message', function (event) {
     // Two guards. The origin check rejects messages from any other site; the
     // source check rejects messages from other iframes on this same page, which
@@ -43,7 +75,14 @@
     if (event.source !== iframe.contentWindow) return;
 
     var data = event.data;
-    if (!data || data.type !== 'yp-form-height') return;
+    if (!data) return;
+
+    if (data.type === 'yp-form-ready') {
+      ready = true;
+      return;
+    }
+
+    if (data.type !== 'yp-form-height') return;
 
     var height = Number(data.height);
     if (height > 0 && height < 5000) iframe.style.height = height + 'px';
