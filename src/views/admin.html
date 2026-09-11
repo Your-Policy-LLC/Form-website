@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Form sites</title>
+<style>
+  :root { --ink:#16202c; --muted:#5b6875; --line:#d4dae1; --accent:#0b5cab; --err:#b3261e; --ok:#1b7a3d; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:28px; background:#f6f8fa; color:var(--ink);
+         font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 24px; }
+  .wrap { max-width:880px; margin:0 auto; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px;
+          padding:18px; margin-bottom:14px; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .slug { font:13px ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--muted); }
+  label { display:block; font-size:12px; font-weight:650; letter-spacing:.04em;
+          text-transform:uppercase; margin:14px 0 4px; }
+  input[type=text], textarea { width:100%; padding:9px; font-size:14px; font-family:inherit;
+          border:1px solid var(--line); border-radius:6px; color:inherit; }
+  textarea { min-height:84px; font:13px ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .hint { font-size:12px; color:var(--muted); margin:4px 0 0; }
+  .err { color:var(--err); font-size:12px; margin:4px 0 0; }
+  .err:empty { display:none; }
+  button { padding:9px 14px; font-size:14px; font-weight:600; font-family:inherit;
+           border:0; border-radius:6px; background:var(--accent); color:#fff; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  button.danger { background:#fff; color:var(--err); border:1px solid #e4b9b6; }
+  .actions { display:flex; gap:8px; margin-top:16px; align-items:center; }
+  .status { font-size:13px; color:var(--ok); }
+  .status.bad { color:var(--err); }
+  .snippet { background:#0f1720; color:#e6edf3; padding:10px; border-radius:6px;
+             font:12px ui-monospace,SFMono-Regular,Menlo,monospace; overflow-x:auto; margin-top:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Form sites</h1>
+  <p class="sub">Which websites may display the quote form, and how each one is labelled in Slack.</p>
+  <div id="list"></div>
+  <button id="add" class="ghost">Add a site</button>
+</div>
+
+<script>
+var listEl = document.getElementById('list');
+var themeKeys = [];
+
+function h(tag, attrs, text) {
+  var el = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+  if (text != null) el.textContent = text;
+  return el;
+}
+
+function card(site, isNew) {
+  var slug = site.slug || '';
+  var el = h('div', { class: 'card' });
+
+  var head = h('div', { class: 'row' });
+  head.appendChild(h('strong', {}, isNew ? 'New site' : site.label));
+  if (!isNew) head.appendChild(h('span', { class: 'slug' }, '/f/' + slug));
+  el.appendChild(head);
+
+  el.appendChild(h('label', { for: 'slug-' + slug }, 'Slug'));
+  var slugIn = h('input', { type: 'text', id: 'slug-' + slug, value: slug, placeholder: 'larsen-flynn' });
+  if (!isNew) slugIn.setAttribute('readonly', 'readonly');
+  el.appendChild(slugIn);
+  el.appendChild(h('p', { class: 'hint' }, isNew
+    ? 'Appears in the embed snippet. Cannot be changed later.'
+    : 'Fixed once created, because live pages reference it.'));
+  el.appendChild(h('p', { class: 'err', 'data-err': 'slug' }));
+
+  el.appendChild(h('label', {}, 'Label shown in Slack'));
+  var labelIn = h('input', { type: 'text', value: site.label || '', placeholder: 'Larsen Flynn' });
+  el.appendChild(labelIn);
+  el.appendChild(h('p', { class: 'err', 'data-err': 'label' }));
+
+  el.appendChild(h('label', {}, 'Websites allowed to show this form'));
+  var originsIn = h('textarea', { placeholder: 'larsenflynn.com\nwww.larsenflynn.com\nlarsenflynn.wpenginepowered.com' });
+  originsIn.value = (site.allowed_origins || []).join('\n');
+  el.appendChild(originsIn);
+  el.appendChild(h('p', { class: 'hint' },
+    'One per line. www and the bare domain are different addresses \u2014 list both. ' +
+    'Add the live domain before a site launches, or the form will be blank on it.'));
+  el.appendChild(h('p', { class: 'err', 'data-err': 'allowedOrigins' }));
+
+  if (!isNew) {
+    var snip = h('div', { class: 'snippet' },
+      '<script src="' + window.location.origin + '/embed.js" data-slug="' + slug + '"><\/script>');
+    el.appendChild(snip);
+  }
+
+  var actions = h('div', { class: 'actions' });
+  var save = h('button', {}, 'Save');
+  actions.appendChild(save);
+  var status = h('span', { class: 'status' });
+  if (!isNew && slug !== 'preview') {
+    var del = h('button', { class: 'danger' }, 'Delete');
+    del.onclick = function () { removeSite(slug, status); };
+    actions.appendChild(del);
+  }
+  actions.appendChild(status);
+  el.appendChild(actions);
+
+  save.onclick = function () {
+    Array.prototype.forEach.call(el.querySelectorAll('.err'), function (p) { p.textContent = ''; });
+    status.className = 'status';
+    status.textContent = 'Saving...';
+    fetch('/admin/api/sites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug: slugIn.value,
+        label: labelIn.value,
+        allowedOrigins: originsIn.value,
+        theme: site.theme || {}
+      })
+    }).then(function (r) {
+      return r.json().then(function (b) { return { status: r.status, body: b }; });
+    }).then(function (r) {
+      if (r.body && r.body.ok) {
+        status.textContent = 'Saved. Live immediately.';
+        load();
+        return;
+      }
+      status.className = 'status bad';
+      status.textContent = 'Not saved.';
+      var errs = (r.body && r.body.errors) || {};
+      Object.keys(errs).forEach(function (k) {
+        var p = el.querySelector('[data-err="' + k + '"]');
+        if (p) p.textContent = errs[k];
+      });
+    }).catch(function () {
+      status.className = 'status bad';
+      status.textContent = 'Request failed.';
+    });
+  };
+
+  return el;
+}
+
+function removeSite(slug, status) {
+  // Typing the slug is deliberate friction. Deleting a site takes the form down
+  // on every page using it, and a one-click confirm is too easy to dismiss.
+  var typed = window.prompt('Deleting "' + slug + '" will break the form on every page using it.\nType the slug to confirm:');
+  if (typed !== slug) return;
+  status.textContent = 'Deleting...';
+  fetch('/admin/api/sites/' + encodeURIComponent(slug), { method: 'DELETE' })
+    .then(function (r) { return r.json(); })
+    .then(function (b) {
+      if (b.ok) load();
+      else { status.className = 'status bad'; status.textContent = 'Delete failed.'; }
+    });
+}
+
+function load() {
+  fetch('/admin/api/sites', { headers: { Accept: 'application/json' } })
+    .then(function (r) {
+      if (r.status === 401) { window.location.href = '/auth/login'; return null; }
+      return r.json();
+    })
+    .then(function (data) {
+      if (!data) return;
+      themeKeys = data.themeKeys || [];
+      listEl.innerHTML = '';
+      (data.sites || []).forEach(function (s) { listEl.appendChild(card(s, false)); });
+    })
+    .catch(function () {
+      listEl.innerHTML = '';
+      listEl.appendChild(h('div', { class: 'card' }, 'Could not load sites.'));
+    });
+}
+
+document.getElementById('add').onclick = function () {
+  listEl.appendChild(card({ allowed_origins: [], theme: {} }, true));
+};
+
+load();
+</script>
+</body>
+</html>
