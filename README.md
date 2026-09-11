@@ -2,7 +2,7 @@
 
 Embeddable insurance quote form for Your Policy agency websites.
 
-Live: `https://form-website-production.up.railway.app`
+Live: `https://form.your-policy.ai`
 Leads are stored in Postgres and posted to Slack.
 
 ---
@@ -47,8 +47,8 @@ must match **exactly**:
 Commit to `main`. Railway deploys automatically. Confirm with:
 
 ```
-curl -s https://form-website-production.up.railway.app/healthz
-curl -sD- -o/dev/null https://form-website-production.up.railway.app/f/<slug> | grep -i content-security-policy
+curl -s https://form.your-policy.ai/healthz
+curl -sD- -o/dev/null https://form.your-policy.ai/f/<slug> | grep -i content-security-policy
 ```
 
 The second command prints the origins that slug will display on. If a domain
@@ -57,7 +57,7 @@ is missing from that list, the form will be blank on it.
 ### 4. Paste the snippet
 
 ```html
-<script src="https://form-website-production.up.railway.app/embed.js"
+<script src="https://form.your-policy.ai/embed.js"
         data-slug="larsen-flynn"></script>
 ```
 
@@ -138,3 +138,38 @@ diagnostic surface.
 - Site registry is code, not a database. Adding a site needs a deploy.
 - The public URL is a Railway-generated hostname. A custom domain should
   replace it before more sites embed the snippet.
+
+---
+
+## Slug convention
+
+Agency name, lowercase, hyphenated. `larsen-flynn`, `gallatin-insurance`.
+
+Chosen once and **never changed**, because live pages reference it and a rename
+breaks every embed using it. Name it after the agency, not the hosting install
+or the current domain — `insure-mt` was named after a domain and is now labelled
+"Gallatin Insurance", which confuses everyone reading Slack.
+
+## What to send when a new site needs the form
+
+1. **Agency name** exactly as producers should read it in Slack.
+2. **Every hostname the site will ever be served on**, including ones that do
+   not exist yet:
+   - the WP Engine host (`*.wpenginepowered.com`)
+   - the live domain
+   - the `www.` variant of the live domain
+   - any staging or preview host anyone will review the page on
+
+Send all of them up front. Adding the live domain after launch means the form is
+blank during the cutover, which is exactly when nobody is watching it.
+
+## Standard placement
+
+Keep this consistent across sites so every agency gets the same treatment:
+
+- One Custom HTML block, no wrapper markup around it.
+- Nothing that hides or defers the block — accordions, tabs and popups can stop
+  the script running on page load.
+- Do not hand-write an iframe. The loader handles height resizing and failure
+  diagnostics; a hand-written iframe has neither, and hardcodes a URL that has
+  to be chased down when the host changes.
