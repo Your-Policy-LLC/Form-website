@@ -1,10 +1,15 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
+import { initSites } from './siteCache.js';
+import { requireAdmin } from './auth/gate.js';
+import { authRouter } from './routes/auth.js';
+import { adminRouter } from './routes/admin.js';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { config } from './config.js';
-import { SITES, getSite, frameAncestorsFor, themeCss } from './sites.js';
+import { getSite, frameAncestorsFor, themeCss, siteCount, allSites } from './sites.js';
 import { CONSENT } from './consent.js';
 import { LINES_OF_BUSINESS, PERSONAL_PRODUCTS, validateSubmission } from './validate.js';
 import { buildMessage, deliver } from './slack.js';
@@ -21,6 +26,12 @@ const app = express();
 // world under the proxy's address.
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '16kb' }));
+app.use(cookieParser());
+
+// Mounted before the public routes. /auth is the sign-in flow itself and must
+// stay open; /admin is the only guarded surface on this service.
+app.use('/auth', authRouter);
+app.use('/admin', requireAdmin, adminRouter);
 
 // Read once at boot. The form is a static template with one substitution; there
 // is no reason to hit the disk on every render.
@@ -77,7 +88,7 @@ app.get('/healthz', async (_req, res) => {
     lastNotify,
     recentEmbeds,
     consentApproved: CONSENT.approved,
-    sites: Object.keys(SITES).length,
+    sites: siteCount(),
   });
 });
 
@@ -148,7 +159,7 @@ function renderForm(site, res) {
 // anonymous one: a submission here is recorded against DEFAULT_SITE_SLUG.
 // Embeds always use /f/:slug explicitly, so this path is for humans.
 app.get('/', (_req, res) => {
-  const site = getSite(config.defaultSiteSlug || Object.keys(SITES)[0]);
+  const site = getSite(config.defaultSiteSlug) || allSites()[0];
   if (!site) {
     console.error(`[form] default site slug is not in the registry: ${config.defaultSiteSlug}`);
     return res.status(404).type('text/plain').send('No default form configured.');
@@ -271,6 +282,11 @@ let dbError = null;
 try {
   await migrate();
   dbReady = true;
+  // Seed on first run, then load the registry into memory. Without this the
+  // cache is empty and every slug 404s, so a failure here is worth its own log
+  // line rather than being lumped in with migrations.
+  const n = await initSites();
+  console.log(`[boot] site registry ready count=${n}`);
 } catch (err) {
   dbError = err.message;
   console.error(`[boot] DEGRADED: migrations failed, submissions disabled: ${err.message}`);
@@ -278,7 +294,7 @@ try {
 
 app.listen(config.port, () => {
   console.log(`[boot] listening port=${config.port} env=${config.nodeEnv}`);
-  console.log(`[boot] sites=${Object.keys(SITES).join(',')}`);
+  console.log(`[boot] sites=${allSites().map((s) => s.slug).join(',')}`);
   console.log(`[boot] slack=${config.slackDryRun ? 'DRY-RUN (no token)' : `channel ${config.slackChannel}`}`);
   if (!CONSENT.approved) {
     console.warn('[boot] consent text is PLACEHOLDER and not compliance-approved');
