@@ -65,6 +65,16 @@ export const SITES = {
       'https://www.insuremt.com',
     ],
   },
+  'general-insurance-dallas': {
+    // General Insurance Agency, Inc., Dallas TX. Marine specialty. Live domain
+    // is generalinsdallas.com; listed here ahead of DNS cutover per the README.
+    label: 'General Insurance Agency',
+    allowedOrigins: [
+      'https://gia2.wpenginepowered.com',
+      'https://generalinsdallas.com',
+      'https://www.generalinsdallas.com',
+    ],
+  },
 };
 
 export function getSite(slug) {
