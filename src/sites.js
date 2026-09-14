@@ -69,6 +69,10 @@ export const SITES = {
     // General Insurance Agency, Inc., Dallas TX. Marine specialty. Live domain
     // is generalinsdallas.com; listed here ahead of DNS cutover per the README.
     label: 'General Insurance Agency',
+    // Boat & Marine leads the list because it is what this office is known for.
+    // Sites without a `lines` entry get DEFAULT_LINE_IDS from validate.js and
+    // are unaffected by this.
+    lines: ['marine', 'commercial', 'employee-benefits', 'personal', 'medicare', 'life-health'],
     allowedOrigins: [
       'https://gia2.wpenginepowered.com',
       'https://generalinsdallas.com',

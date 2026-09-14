@@ -11,7 +11,40 @@ export const LINES_OF_BUSINESS = [
   { id: 'personal', label: 'Personal Insurance' },
   { id: 'medicare', label: 'Medicare' },
   { id: 'life-health', label: 'Individual Life & Health' },
+  // Offered only to sites that list it in their `lines` (see sites.js). Every
+  // other site keeps boat inside the Personal "Toys" product, unchanged.
+  { id: 'marine', label: 'Boat & Marine' },
 ];
+
+// What a site shows when it does not name its own list. This is the original
+// five, in the original order, so adding a line to the registry above cannot
+// change any existing form by itself.
+export const DEFAULT_LINE_IDS = ['commercial', 'employee-benefits', 'personal', 'medicare', 'life-health'];
+
+// The lines a given site offers, as objects, in the site's order. Unknown ids
+// in a site's list are dropped rather than rendered as blank checkboxes.
+export function linesForSite(site) {
+  const ids = Array.isArray(site?.lines) && site.lines.length ? site.lines : DEFAULT_LINE_IDS;
+  return ids.map((id) => LINES_OF_BUSINESS.find((l) => l.id === id)).filter(Boolean);
+}
+
+// Home lakes for the marine line. Rendered as a select, so a producer never
+// has to guess whether "RC" meant Richland Chambers or Ray Roberts.
+export const LAKES = [
+  { id: 'texoma', label: 'Lake Texoma' },
+  { id: 'possum-kingdom', label: 'Possum Kingdom Lake' },
+  { id: 'cedar-creek', label: 'Cedar Creek Lake' },
+  { id: 'richland-chambers', label: 'Richland Chambers Reservoir' },
+  { id: 'ray-roberts', label: 'Lake Ray Roberts' },
+  { id: 'ray-hubbard', label: 'Lake Ray Hubbard' },
+  { id: 'lewisville', label: 'Lewisville Lake / Lake Dallas' },
+  { id: 'other', label: 'Other / not sure yet' },
+];
+const LAKE_IDS = new Set(LAKES.map((l) => l.id));
+const LAKE_LABELS = new Map(LAKES.map((l) => [l.id, l.label]));
+export function lakeLabelFor(id) {
+  return LAKE_LABELS.get(id) || id;
+}
 
 const LOB_IDS = new Set(LINES_OF_BUSINESS.map((l) => l.id));
 const LOB_LABELS = new Map(LINES_OF_BUSINESS.map((l) => [l.id, l.label]));
@@ -79,11 +112,15 @@ export function formatPhone(tenDigits) {
 
 // Returns { ok, errors, value }. `errors` is keyed by field so the form can put
 // each message next to the input it belongs to.
-export function validateSubmission(body) {
+export function validateSubmission(body, site) {
   const errors = {};
 
+  // A line has to be both a real line and one this site actually offers. A
+  // request naming a line the site never rendered is not a user mistake, so it
+  // is dropped silently and the "choose at least one" check does the rest.
+  const offered = new Set(linesForSite(site).map((l) => l.id));
   const rawLines = Array.isArray(body?.lines) ? body.lines : [];
-  const lines = [...new Set(rawLines.filter((l) => LOB_IDS.has(l)))];
+  const lines = [...new Set(rawLines.filter((l) => LOB_IDS.has(l) && offered.has(l)))];
   if (!lines.length) errors.lines = 'Choose at least one type of insurance.';
 
   const firstName = str(body?.firstName, 80);
@@ -169,9 +206,31 @@ export function validateSubmission(body) {
     }
   }
 
+  // Marine details. Null when the line is not selected, for the same reason as
+  // personalProducts. Year is bounded loosely: old enough for a restored
+  // classic, one year ahead for a boat on order.
+  let marine = null;
+  if (lines.includes('marine')) {
+    marine = { year: null, makeModel: null, lake: null };
+    const rawYear = str(body?.boatYear, 4);
+    const thisYear = new Date().getFullYear();
+    if (!rawYear) errors.boatYear = 'Boat year is required.';
+    else if (!/^\d{4}$/.test(rawYear) || Number(rawYear) < 1950 || Number(rawYear) > thisYear + 1) {
+      errors.boatYear = 'Enter a 4-digit year.';
+    } else marine.year = Number(rawYear);
+
+    marine.makeModel = str(body?.boatMakeModel, 120);
+    if (!marine.makeModel) errors.boatMakeModel = 'Make and model are required.';
+
+    const rawLake = str(body?.homeLake, 40);
+    if (!rawLake) errors.homeLake = 'Choose the lake where you keep or use the boat.';
+    else if (!LAKE_IDS.has(rawLake)) errors.homeLake = 'Choose a lake from the list.';
+    else marine.lake = rawLake;
+  }
+
   return {
     ok: Object.keys(errors).length === 0,
     errors,
-    value: { lines, firstName, lastName, phone, email, zip, commercial, personalProducts },
+    value: { lines, firstName, lastName, phone, email, zip, commercial, personalProducts, marine },
   };
 }

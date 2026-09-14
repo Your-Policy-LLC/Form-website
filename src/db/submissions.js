@@ -9,8 +9,8 @@ export async function insertSubmission(submission, site, consent) {
        (site_slug, lines, first_name, last_name, phone, email, zip,
         page_url, utm, consent_version, consent_text,
         business_name, employee_range, eb_contact_ok, personal_products,
-        commercial_quote_ok, employee_count)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,$14,$15,$16,$17)
+        commercial_quote_ok, employee_count, marine)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb)
      returning id, created_at`,
     [
       site.slug,
@@ -30,6 +30,7 @@ export async function insertSubmission(submission, site, consent) {
       submission.personalProducts ?? null,
       submission.commercial?.commercialOk ?? null,
       submission.commercial?.count ?? null,
+      submission.marine ? JSON.stringify(submission.marine) : null,
     ],
   );
   return rows[0];

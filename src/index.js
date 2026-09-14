@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { config } from './config.js';
 import { SITES, getSite, frameAncestorsFor, themeCss } from './sites.js';
 import { CONSENT } from './consent.js';
-import { LINES_OF_BUSINESS, PERSONAL_PRODUCTS, validateSubmission } from './validate.js';
+import { LINES_OF_BUSINESS, PERSONAL_PRODUCTS, LAKES, linesForSite, validateSubmission } from './validate.js';
 import { buildMessage, deliver } from './slack.js';
 import { migrate } from './db/migrate.js';
 import { insertSubmission, markNotified, recordAttempt } from './db/submissions.js';
@@ -126,8 +126,9 @@ function recordEmbed(site, referer) {
 function renderForm(site, res) {
   const bootstrap = {
     slug: site.slug,
-    lines: LINES_OF_BUSINESS,
+    lines: linesForSite(site),
     personalProducts: PERSONAL_PRODUCTS,
+    lakes: LAKES,
     consentText: CONSENT.text,
     fallbackPhone: config.fallbackPhone,
   };
@@ -186,7 +187,7 @@ app.post('/api/submit', async (req, res) => {
     return res.json({ ok: true });
   }
 
-  const { ok, errors, value } = validateSubmission(req.body);
+  const { ok, errors, value } = validateSubmission(req.body, site);
   if (!ok) {
     console.warn(`[submit] rejected: invalid slug=${site.slug} fields=${Object.keys(errors).join(',')}`);
     return res.status(400).json({ ok: false, errors });

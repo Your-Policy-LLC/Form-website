@@ -39,7 +39,7 @@
   .field.span { grid-column: 1 / -1; }
   label.lbl { font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
   .hint { font-size: 12px; color: var(--muted); font-weight: 400; }
-  input[type=text], input[type=tel], input[type=email] {
+  input[type=text], input[type=tel], input[type=email], select {
     padding: 8px 10px; font-size: 16px; border: 1px solid var(--border);
     border-radius: 6px; font-family: inherit;
     background: var(--field); color: var(--text);
@@ -110,6 +110,28 @@
   <div class="hp" aria-hidden="true">
     <label for="website">Website</label>
     <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+  </div>
+
+  <div id="marine" hidden style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
+    <div class="sec">Tell us about the boat</div>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Three quick details so we can start the quote before we call.</p>
+    <div class="grid">
+      <div class="field">
+        <label class="lbl" for="boatYear">Year <span class="star">*</span></label>
+        <input id="boatYear" name="boatYear" type="text" inputmode="numeric" maxlength="4" placeholder="2021">
+        <p class="err" id="err-boatYear"></p>
+      </div>
+      <div class="field">
+        <label class="lbl" for="boatMakeModel">Make and model <span class="star">*</span></label>
+        <input id="boatMakeModel" name="boatMakeModel" type="text" maxlength="120" placeholder="Malibu 23 LSV">
+        <p class="err" id="err-boatMakeModel"></p>
+      </div>
+      <div class="field span">
+        <label class="lbl" for="homeLake">Home lake <span class="star">*</span></label>
+        <select id="homeLake" name="homeLake"></select>
+        <p class="err" id="err-homeLake"></p>
+      </div>
+    </div>
   </div>
 
   <div id="personal" hidden style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
@@ -204,6 +226,23 @@ function has(id) {
 
 var personalBox = document.getElementById('personal');
 var productsBox = document.getElementById('products');
+
+// Marine details render only for sites whose line list includes 'marine';
+// everywhere else the section stays hidden and the lake select stays empty.
+var marineBox = document.getElementById('marine');
+var lakeSelect = document.getElementById('homeLake');
+(function () {
+  var blank = document.createElement('option');
+  blank.value = ''; blank.textContent = 'Choose a lake';
+  lakeSelect.appendChild(blank);
+  (BOOT.lakes || []).forEach(function (l) {
+    var o = document.createElement('option');
+    o.value = l.id; o.textContent = l.label;
+    lakeSelect.appendChild(o);
+  });
+  lakeSelect.addEventListener('change', function () { clearError('homeLake'); });
+})();
+
 BOOT.personalProducts.forEach(function (p) {
   var row = document.createElement('label');
   row.className = 'choice';
@@ -234,6 +273,7 @@ function syncCommercial() {
   document.getElementById('commercialQuestion').hidden = !(has('employee-benefits') && !has('commercial'));
 
   personalBox.hidden = !has('personal');
+  marineBox.hidden = !has('marine');
 
   if (!business) {
     ['businessName', 'employeeCount', 'ebContactOk', 'commercialQuoteOk']
@@ -241,6 +281,9 @@ function syncCommercial() {
   }
   if (personalBox.hidden) {
     document.getElementById('err-personalProducts').textContent = '';
+  }
+  if (marineBox.hidden) {
+    ['boatYear', 'boatMakeModel', 'homeLake'].forEach(function (f) { clearError(f); });
   }
   reportHeight();
 }
@@ -267,7 +310,7 @@ function showErrors(errors) {
 }
 
 ['firstName', 'lastName', 'phone', 'email', 'zip',
- 'businessName', 'employeeCount'].forEach(function (f) {
+ 'businessName', 'employeeCount', 'boatYear', 'boatMakeModel'].forEach(function (f) {
   var el = document.getElementById(f);
   if (el) el.addEventListener('input', function () { clearError(f); });
   if (el && el.type === 'checkbox') el.addEventListener('change', function () { clearError(f); });
@@ -333,6 +376,12 @@ form.addEventListener('submit', function (event) {
     payload.personalProducts = prodBoxes
       .filter(function (b) { return b.checked; })
       .map(function (b) { return b.value; });
+  }
+
+  if (boxes.some(function (b) { return b.checked && b.value === 'marine'; })) {
+    payload.boatYear = document.getElementById('boatYear').value;
+    payload.boatMakeModel = document.getElementById('boatMakeModel').value;
+    payload.homeLake = lakeSelect.value;
   }
 
   submitBtn.disabled = true;

@@ -4,7 +4,7 @@
 // this function and only shows the prospect a thank-you once it resolves.
 
 import { config } from './config.js';
-import { labelFor, productLabelFor, formatPhone } from './validate.js';
+import { labelFor, productLabelFor, lakeLabelFor, formatPhone } from './validate.js';
 
 const SLACK_URL = 'https://slack.com/api/chat.postMessage';
 
@@ -86,6 +86,19 @@ export function buildMessage(submission, site, consent) {
         type: 'mrkdwn',
         text: `*Personal lines wanted:* ${submission.personalProducts.map(productLabelFor).join(', ')}`,
       },
+    });
+  }
+
+  // Marine block. Year and make/model together, lake on its own, so a producer
+  // can quote from the notification without opening the record.
+  if (submission.marine) {
+    const m = submission.marine;
+    blocks.push({
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*Boat:*\n${m.year ?? ''} ${m.makeModel ?? ''}`.trim() },
+        { type: 'mrkdwn', text: `*Home lake:*\n${lakeLabelFor(m.lake)}` },
+      ],
     });
   }
 
