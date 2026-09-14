@@ -65,7 +65,16 @@
     iframe.parentNode.insertBefore(box, iframe);
   }
 
-  setTimeout(showFailure, 5000);
+  // Start the failure clock only once the iframe has actually attempted to
+  // load. With loading="lazy" the browser defers the request until the frame
+  // nears the viewport, so a timer started at insertion fires a false "could
+  // not be displayed" on any page where the form sits below the fold (most
+  // phones). A CSP-blocked frame still fires 'load' (with an empty document),
+  // so a genuinely blocked embed is still reported five seconds after the
+  // browser tries it.
+  iframe.addEventListener('load', function () {
+    setTimeout(showFailure, 5000);
+  });
 
   window.addEventListener('message', function (event) {
     // Two guards. The origin check rejects messages from any other site; the
