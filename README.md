@@ -5,6 +5,40 @@ Embeddable insurance quote form for Your Policy agency websites.
 Live: `https://form.your-policy.ai`
 Leads are stored in Postgres and posted to Slack.
 
+
+---
+
+# QUICK CHECKLIST: putting the form on a page
+
+**1. Send the maintainer two things, before the page is built.**
+Agency name exactly as producers should read it in Slack (take it from the
+site's own WordPress title, not the hosting install name), and every hostname
+the site will ever load on: WP Engine host, live domain, `www.` variant, any
+staging host. Including ones that do not exist yet.
+
+**2. Paste this into a Custom HTML block. Nothing else.**
+
+```html
+<script src="https://form.your-policy.ai/embed.js" data-slug="YOUR-SLUG"></script>
+```
+
+Not a paragraph block, not a page-builder text widget. Those strip `<script>`
+silently and leave an empty space with no error.
+
+**Never hand-write an `<iframe>`.** It appears to work and gets three things
+wrong: it never resizes to fit the form, it shows nothing when something blocks
+it, and whoever writes it hardcodes the `page=` parameter, so every lead reports
+the same URL regardless of which page produced it. The loader reads the real
+page URL at runtime.
+
+**3. Load the page and check.**
+Nothing at all means the script was stripped. A red error box means the origin
+is not allowed; the browser console prints the exact string to add.
+
+Then submit one test lead, confirm the agency name in Slack, delete the test row.
+
+Detail on each step follows below.
+
 ---
 
 ## Adding the form to a website

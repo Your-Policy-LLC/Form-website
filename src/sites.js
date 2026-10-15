@@ -80,12 +80,10 @@ export const SITES = {
     ],
   },
   'sav-on': {
-    // TODO(confirm): label is provisional. This is what producers read at the
-    // top of every lead from this site, so correct it if the agency goes by
-    // something else.
+    // Confirmed from the site's own WordPress title, not inferred.
     // Live domain is sav-on.com; listed here ahead of DNS cutover per the
     // README, so the form does not go blank during the move.
-    label: 'Sav-On',
+    label: 'Sav-On Insurance',
     allowedOrigins: [
       'https://savon1.wpenginepowered.com',
       'https://sav-on.com',
