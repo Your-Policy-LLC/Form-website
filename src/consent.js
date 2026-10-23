@@ -19,11 +19,14 @@
 // Ask about both. Item 2 may require its own text shown conditionally.
 
 export const CONSENT = {
-  version: 'placeholder-v0',
+  version: 'interim-2026-10',
+  // Still false: this is interim wording, not compliance-approved. The boot
+  // warning stays on deliberately until someone signs this off.
   approved: false,
   text:
-    'PLACEHOLDER, PENDING COMPLIANCE REVIEW. By submitting this form I agree ' +
-    'to be contacted about my request by phone, text message, or email at the ' +
-    'contact information I provided, including by automated means. Consent is ' +
-    'not a condition of purchase. Message and data rates may apply.',
+    'By submitting this form I agree that a licensed advisor may contact me ' +
+    'about my request by phone, text message, or email at the contact ' +
+    'information I provided, including by automated means. Consent is not a ' +
+    'condition of purchase. Message and data rates may apply, and I can reply ' +
+    'STOP at any time to stop texts.',
 };
