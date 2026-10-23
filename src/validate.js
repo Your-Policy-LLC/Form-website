@@ -72,11 +72,31 @@ export const PERSONAL_PRODUCTS = [
   { id: 'flood', label: 'Flood' },
   { id: 'renters', label: 'Renters' },
   { id: 'toys', label: 'Toys (boat, ATV/UTV, snowmobile)' },
+  // Auto coverages offered only to sites that name them in `products`. Neither
+  // is a line of business: an SR-22 is a state filing attached to an auto
+  // policy and broad form is a named-operator auto policy, so both sit with
+  // Auto rather than beside Commercial and Medicare.
+  { id: 'sr22', label: 'SR-22 Filing' },
+  { id: 'broad-form', label: 'Broad Form' },
   { id: 'rv', label: 'RV' },
 ];
 
 const PRODUCT_IDS = new Set(PERSONAL_PRODUCTS.map((p) => p.id));
 const PRODUCT_LABELS = new Map(PERSONAL_PRODUCTS.map((p) => [p.id, p.label]));
+
+// What a site shows when it does not name its own list: the original seven, in
+// the original order. Adding a product above therefore cannot change any
+// existing form by itself, the same guarantee DEFAULT_LINE_IDS gives for lines.
+export const DEFAULT_PRODUCT_IDS = ['home', 'auto', 'motorcycle', 'flood', 'renters', 'toys', 'rv'];
+
+// The products a given site offers, as objects, in the site's order. Unknown
+// ids are dropped rather than rendered as blank checkboxes.
+export function productsForSite(site) {
+  const ids = Array.isArray(site?.products) && site.products.length
+    ? site.products
+    : DEFAULT_PRODUCT_IDS;
+  return ids.map((id) => PERSONAL_PRODUCTS.find((p) => p.id === id)).filter(Boolean);
+}
 
 export function productLabelFor(id) {
   return PRODUCT_LABELS.get(id) || id;

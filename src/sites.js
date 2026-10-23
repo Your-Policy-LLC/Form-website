@@ -84,6 +84,11 @@ export const SITES = {
     // Live domain is sav-on.com; listed here ahead of DNS cutover per the
     // README, so the form does not go blank during the move.
     label: 'Sav-On Insurance',
+    // SR-22 and broad form are Sav-On's highest-intent lead types; without
+    // these they arrive as a bare "Personal Insurance" request. Scoped to this
+    // site only, so Gallatin and Larsen Flynn are unchanged. Both sit next to
+    // Auto because that is the policy they attach to.
+    products: ['auto', 'sr22', 'broad-form', 'home', 'motorcycle', 'flood', 'renters', 'toys', 'rv'],
     allowedOrigins: [
       'https://savon1.wpenginepowered.com',
       'https://sav-on.com',
