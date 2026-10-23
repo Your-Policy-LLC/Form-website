@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { config } from './config.js';
 import { SITES, getSite, frameAncestorsFor, themeCss } from './sites.js';
 import { CONSENT } from './consent.js';
-import { LINES_OF_BUSINESS, PERSONAL_PRODUCTS, LAKES, linesForSite, validateSubmission } from './validate.js';
+import { LINES_OF_BUSINESS, LAKES, linesForSite, productsForSite, validateSubmission } from './validate.js';
 import { buildMessage, deliver } from './slack.js';
 import { migrate } from './db/migrate.js';
 import { insertSubmission, markNotified, recordAttempt } from './db/submissions.js';
@@ -127,7 +127,7 @@ function renderForm(site, res) {
   const bootstrap = {
     slug: site.slug,
     lines: linesForSite(site),
-    personalProducts: PERSONAL_PRODUCTS,
+    personalProducts: productsForSite(site),
     lakes: LAKES,
     consentText: CONSENT.text,
     fallbackPhone: config.fallbackPhone,
