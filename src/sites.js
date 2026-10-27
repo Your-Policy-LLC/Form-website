@@ -106,11 +106,17 @@ let cache = new Map();
 export function loadCache(rows) {
   const next = new Map();
   for (const row of rows) {
+    // Which lines and personal products a form offers stay in code, keyed by
+    // slug. Only domains, label and colours moved to the database; without
+    // this merge GIA loses Boat & Marine and Sav-On loses SR-22 and broad form.
+    const seed = SEED_SITES[row.slug] || {};
     next.set(row.slug, {
       slug: row.slug,
       label: row.label,
       allowedOrigins: row.allowed_origins || [],
       theme: { ...DEFAULT_THEME, ...(row.theme || {}) },
+      ...(seed.lines ? { lines: seed.lines } : {}),
+      ...(seed.products ? { products: seed.products } : {}),
     });
   }
   cache = next;
