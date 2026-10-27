@@ -16,26 +16,70 @@ site's own WordPress title, not the hosting install name), and every hostname
 the site will ever load on: WP Engine host, live domain, `www.` variant, any
 staging host. Including ones that do not exist yet.
 
-**2. Paste this into a Custom HTML block. Nothing else.**
+**2. The embed is TWO pieces. Both are required.**
+
+**Piece one — the page.** A wrapper with `class="form-shell"`, and the script
+tag inside it, in a **Custom HTML block**:
 
 ```html
-<script src="https://form.your-policy.ai/embed.js" data-slug="YOUR-SLUG"></script>
+<div class="form-shell">
+  <script src="https://form.your-policy.ai/embed.js" data-slug="YOUR-SLUG"></script>
+</div>
 ```
 
 Not a paragraph block, not a page-builder text widget. Those strip `<script>`
 silently and leave an empty space with no error.
 
+**Piece two — Appearance → Customize → Additional CSS.** Swap the prefix for
+whatever wraps that site's content (`.lf-content`, `.savon-content`); on Sav-On
+there is no prefix at all:
+
+```css
+.form-shell iframe{width:100%;border:0;display:block;height:620px;border-radius:8px;transition:height .25s ease}
+```
+
+**Piece two is not optional, and leaving it out is the failure that has cost
+the most time on this project.** 620px is a *starting* height. The embed
+measures itself and the loader sets the true height inline, which overrides
+this rule — so the form is never 620px for longer than a moment, and never
+fills the page. But with no starting value the iframe has zero height before
+the first message arrives, and the form is invisible. That is what a "blank
+form" has meant every time.
+
 **Never hand-write an `<iframe>`.** It appears to work and gets three things
-wrong: it never resizes to fit the form, it shows nothing when something blocks
-it, and whoever writes it hardcodes the `page=` parameter, so every lead reports
-the same URL regardless of which page produced it. The loader reads the real
-page URL at runtime.
+wrong: a cross-origin iframe cannot measure its own contents, so it never
+resizes; it shows nothing when something blocks it; and whoever writes it
+hardcodes the `page=` parameter, so every lead reports the same URL regardless
+of which page produced it. The loader solves all three. This has been reverted
+to an iframe twice on the same page — if the form goes blank on a site that
+previously worked, check this first.
 
 **3. Load the page and check.**
 Nothing at all means the script was stripped. A red error box means the origin
 is not allowed; the browser console prints the exact string to add.
 
 Then submit one test lead, confirm the agency name in Slack, delete the test row.
+
+**4. Verify from the server, not just the page.**
+A form that looks right is not proof. `GET /healthz` returns `recentEmbeds`:
+every origin that has requested a form, with an `allowed` flag. If your site is
+not listed, the browser never fetched the form — the script was stripped or
+never ran. If it is listed with `allowed:false`, the origin needs adding.
+
+This is how every blank-form incident on this project was actually diagnosed.
+
+## Sites as currently configured
+
+| Slug | Agency label in Slack | CSS prefix | CSS lives in |
+| --- | --- | --- | --- |
+| `sav-on` | Sav-On Insurance | none | Additional CSS |
+| `larsen-flynn` | Larsen Flynn | `.lf-content` | Additional CSS |
+| `insure-mt` | Gallatin Insurance | — | — |
+| `general-insurance-dallas` | — | — | — |
+| `preview` | PREVIEW — test submission, not a real lead | — | — |
+
+`preview` is what the bare domain serves, so a test at form.your-policy.ai is
+never mistaken for a real lead.
 
 Detail on each step follows below.
 
