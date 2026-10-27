@@ -94,14 +94,14 @@
     <div class="card">
       <h2>Personal lines: what was requested</h2>
       <table id="combos"></table>
-      <p class="note">The exact combination each personal lead asked for, e.g. Home + Auto versus Home only.</p>
+      <p class="note">The exact combination each personal lead asked for, e.g. Home + Auto versus Home only. Each lead appears once, so this column adds to 100%.</p>
     </div>
     <div class="card">
       <h2>Personal lines: by product</h2>
       <table id="products"></table>
       <h2 style="margin-top:20px">Source</h2>
       <table id="sources"></table>
-      <p class="note">Campaign tag (utm_source) when the visitor arrived on a tagged link.</p>
+      <p class="note">Products: a lead asking for several counts under each, so that column can add to more than 100%. Source: the campaign tag (utm_source) when the visitor arrived on a tagged link.</p>
     </div>
   </div>
 
@@ -299,15 +299,17 @@ function barRow(t, label, n, total) {
   t.appendChild(tr);
 }
 
-function tableHead(t, a, b) {
-  var tr = h('tr'); tr.appendChild(h('th', {}, a)); tr.appendChild(h('th', { class: 'num' }, b)); tr.appendChild(h('th', { class: 'num' }, 'Share'));
+// The share column names its denominator, because it differs by table: the
+// personal tables divide by personal leads, Source divides by all leads.
+function tableHead(t, a, b, share) {
+  var tr = h('tr'); tr.appendChild(h('th', {}, a)); tr.appendChild(h('th', { class: 'num' }, b)); tr.appendChild(h('th', { class: 'num' }, share));
   t.appendChild(tr);
 }
 
 function renderCombos(s) {
   var t = $('combos'); t.textContent = '';
   var total = s.personalCombos.reduce(function (a, r) { return a + r.n; }, 0);
-  tableHead(t, 'Combination', 'Leads');
+  tableHead(t, 'Combination', 'Leads', '% of personal leads');
   if (!total) { var tr = h('tr'); tr.appendChild(h('td', { colspan: '3', class: 'muted' }, 'No personal lines leads in this view.')); t.appendChild(tr); return; }
   s.personalCombos.forEach(function (r) { barRow(t, comboLabel(r.combo), r.n, total); });
 }
@@ -315,7 +317,7 @@ function renderCombos(s) {
 function renderProducts(s) {
   var t = $('products'); t.textContent = '';
   var personal = s.personalCombos.reduce(function (a, r) { return a + r.n; }, 0);
-  tableHead(t, 'Product', 'Leads');
+  tableHead(t, 'Product', 'Leads', '% of personal leads');
   if (!s.personalProducts.length) { var tr = h('tr'); tr.appendChild(h('td', { colspan: '3', class: 'muted' }, 'None in this view.')); t.appendChild(tr); return; }
   // Share of personal leads asking for this product, so the column reads
   // "62% of personal leads wanted Auto" rather than a share of all products.
@@ -324,7 +326,7 @@ function renderProducts(s) {
 
 function renderSources(s) {
   var t = $('sources'); t.textContent = '';
-  tableHead(t, 'Source', 'Leads');
+  tableHead(t, 'Source', 'Leads', '% of all leads');
   s.sources.forEach(function (r) { barRow(t, r.source, r.n, s.total); });
 }
 
