@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { listSites, upsertSite, deleteSite } from '../db/sites.js';
 import { refreshSites } from '../siteCache.js';
-import { DEFAULT_THEME } from '../sites.js';
+import { DEFAULT_THEME, allSites } from '../sites.js';
+import { leadSummary, leadList } from '../db/leads.js';
+import { LINES_OF_BUSINESS, PERSONAL_PRODUCTS, LAKES } from '../validate.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const adminRouter = express.Router();
@@ -93,3 +95,41 @@ adminRouter.delete('/api/sites/:slug', async (req, res) => {
   console.warn(`[admin] ${req.user.email} DELETED slug=${req.params.slug} cache=${count}`);
   res.json({ ok: true });
 });
+
+// Leads dashboard. Same sign-in gate as the site admin because it shows names,
+// phone numbers and emails. Logs carry filters and counts, never lead details.
+adminRouter.get('/leads', async (_req, res) => {
+  res.type('html').send(await readFile(join(here, '..', 'views', 'leads.html'), 'utf8'));
+});
+
+adminRouter.get('/api/leads/meta', (_req, res) => {
+  res.json({
+    sites: allSites().map((s) => ({ slug: s.slug, label: s.label })),
+    lines: LINES_OF_BUSINESS,
+    products: PERSONAL_PRODUCTS,
+    lakes: LAKES,
+  });
+});
+
+// Express 4 does not catch rejected promises, and on Node 20+ an unhandled
+// rejection ends the process. A bad query must cost one request, not the form.
+const safe = (fn) => async (req, res) => {
+  try {
+    await fn(req, res);
+  } catch (err) {
+    console.error(`[leads] failed path=${req.path} err=${err.message}`);
+    res.status(500).json({ error: 'Could not load leads.' });
+  }
+};
+
+adminRouter.get('/api/leads/summary', safe(async (req, res) => {
+  const summary = await leadSummary(req.query);
+  console.log(`[leads] ${req.user.email} summary total=${summary.total} filters=${JSON.stringify(req.query)}`);
+  res.json(summary);
+}));
+
+adminRouter.get('/api/leads', safe(async (req, res) => {
+  const page = await leadList(req.query);
+  console.log(`[leads] ${req.user.email} list offset=${page.offset} returned=${page.leads.length}`);
+  res.json(page);
+}));

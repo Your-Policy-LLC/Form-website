@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Leads</title>
+<style>
+  :root { --ink:#16202c; --muted:#5b6875; --line:#d4dae1; --accent:#0b5cab; --pale:#eaf2fb; --err:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:28px; background:#f6f8fa; color:var(--ink);
+         font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; }
+  nav { font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:14px; }
+  nav a.on { color:var(--ink); font-weight:650; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  h2 { font-size:15px; margin:0 0 10px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 20px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; margin-bottom:14px; }
+  .filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+  .filters label { display:block; font-size:11px; font-weight:650; letter-spacing:.04em; text-transform:uppercase; margin-bottom:4px; color:var(--muted); }
+  select, input[type=date] { padding:7px 8px; font:inherit; font-size:14px; border:1px solid var(--line); border-radius:6px; background:#fff; color:inherit; }
+  button { padding:8px 12px; font:inherit; font-size:13px; font-weight:600; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .check { font-size:13px; display:flex; gap:6px; align-items:center; padding-bottom:8px; }
+  .kpis { display:flex; flex-wrap:wrap; gap:14px; }
+  .kpi { flex:1 1 150px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .kpi .n { font-size:26px; font-weight:750; font-variant-numeric:tabular-nums; }
+  .kpi .l { font-size:12px; color:var(--muted); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; }
+  th, td { padding:7px 9px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  th { font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:650; white-space:nowrap; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tr.total td { font-weight:700; border-top:2px solid var(--line); }
+  td.cell { cursor:pointer; }
+  td.cell:hover { background:var(--pale); }
+  td.zero { color:#b8c0c8; }
+  .bar { height:6px; background:var(--pale); border-radius:3px; margin-top:3px; }
+  .bar i { display:block; height:6px; background:var(--accent); border-radius:3px; }
+  .muted { color:var(--muted); }
+  .note { font-size:12px; color:var(--muted); margin:10px 0 0; }
+  tr.lead { cursor:pointer; }
+  tr.lead:hover td { background:#f9fbfd; }
+  tr.detail td { background:#f9fbfd; }
+  dl { display:grid; grid-template-columns:150px 1fr; gap:4px 14px; margin:4px 0; font-size:13px; }
+  dt { color:var(--muted); }
+  dd { margin:0; word-break:break-word; }
+  .tag { display:inline-block; background:var(--pale); color:var(--accent); border-radius:10px; padding:1px 8px; font-size:12px; margin:1px 3px 1px 0; white-space:nowrap; }
+  .err { color:var(--err); font-size:13px; }
+  @media (max-width:860px) { .grid2 { grid-template-columns:1fr; } body { padding:16px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a href="/admin">Sites</a><a href="/admin/leads" class="on">Leads</a></nav>
+  <h1>Leads</h1>
+  <p class="sub">Every quote request from the embedded form, by office, line of business and what was asked for. Dates are Central time.</p>
+
+  <div class="card">
+    <div class="filters">
+      <div><label for="range">Period</label>
+        <select id="range">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="ytd">Year to date</option>
+          <option value="all">All time</option>
+          <option value="custom">Custom…</option>
+        </select></div>
+      <div class="custom" hidden><label for="from">From</label><input type="date" id="from"></div>
+      <div class="custom" hidden><label for="to">To</label><input type="date" id="to"></div>
+      <div><label for="site">Office</label><select id="site"><option value="">All offices</option></select></div>
+      <div><label for="line">Line</label><select id="line"><option value="">All lines</option></select></div>
+      <div><label for="product">Personal product</label><select id="product"><option value="">Any</option></select></div>
+      <label class="check"><input type="checkbox" id="includeTest"> Include preview tests</label>
+      <button id="reset">Reset</button>
+    </div>
+  </div>
+
+  <div id="error" class="err"></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>Leads by office and line</h2>
+    <div class="scroll"><table id="matrix"></table></div>
+    <p class="note">A lead that asks for two lines counts under each, so line columns can add up to more than the office total. Click a number to filter to those leads.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Personal lines: what was requested</h2>
+      <table id="combos"></table>
+      <p class="note">The exact combination each personal lead asked for, e.g. Home + Auto versus Home only.</p>
+    </div>
+    <div class="card">
+      <h2>Personal lines: by product</h2>
+      <table id="products"></table>
+      <h2 style="margin-top:20px">Source</h2>
+      <table id="sources"></table>
+      <p class="note">Campaign tag (utm_source) when the visitor arrived on a tagged link.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="listTitle">Leads</h2>
+    <div class="scroll"><table id="list"></table></div>
+    <div style="margin-top:12px"><button id="more" hidden>Load 50 more</button></div>
+  </div>
+</div>
+
+<script>
+var META = { sites: [], lines: [], products: [], lakes: [] };
+var siteLabel = {}, lineLabel = {}, productLabel = {}, lakeLabel = {};
+var productOrder = {};
+var offset = 0;
+var $ = function (id) { return document.getElementById(id); };
+
+function h(tag, attrs, text) {
+  var el = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+  if (text != null) el.textContent = text;
+  return el;
+}
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function fmt(n) { return Number(n || 0).toLocaleString(); }
+function pct(n, d) { return d ? Math.round((n / d) * 100) + '%' : '–'; }
+
+function params() {
+  var q = new URLSearchParams();
+  var r = $('range').value, today = new Date();
+  if (r === 'custom') {
+    if ($('from').value) q.set('from', $('from').value);
+    if ($('to').value) q.set('to', $('to').value);
+  } else if (r === 'ytd') {
+    q.set('from', today.getFullYear() + '-01-01');
+  } else if (r !== 'all') {
+    var d = new Date(); d.setDate(d.getDate() - (parseInt(r, 10) - 1));
+    q.set('from', ymd(d));
+  }
+  ['site', 'line', 'product'].forEach(function (k) { if ($(k).value) q.set(k, $(k).value); });
+  if ($('includeTest').checked) q.set('includeTest', '1');
+  return q;
+}
+
+async function getJson(url) {
+  var res = await fetch(url, { headers: { accept: 'application/json' }, credentials: 'same-origin' });
+  if (res.status === 401) { location.href = '/auth/login?returnTo=' + encodeURIComponent(location.pathname); throw new Error('Signed out'); }
+  if (!res.ok) throw new Error('Request failed (' + res.status + ')');
+  return res.json();
+}
+
+function fill(select, items) {
+  items.forEach(function (it) { select.appendChild(h('option', { value: it.value }, it.label)); });
+}
+
+async function boot() {
+  try {
+    META = await getJson('/admin/api/leads/meta');
+  } catch (e) { $('error').textContent = e.message; return; }
+  META.sites.forEach(function (s) { siteLabel[s.slug] = s.label; });
+  META.lines.forEach(function (l) { lineLabel[l.id] = l.label; });
+  META.products.forEach(function (p, i) { productLabel[p.id] = p.label; productOrder[p.id] = i; });
+  META.lakes.forEach(function (l) { lakeLabel[l.id] = l.label; });
+  fill($('site'), META.sites.filter(function (s) { return s.slug !== 'preview'; })
+    .map(function (s) { return { value: s.slug, label: s.label }; }));
+  fill($('line'), META.lines.map(function (l) { return { value: l.id, label: l.label }; }));
+  fill($('product'), META.products.map(function (p) { return { value: p.id, label: p.label.replace(/ \(.*\)$/, '') }; }));
+
+  // Filters survive a reload and can be shared as a link.
+  var start = new URLSearchParams(location.search);
+  ['site', 'line', 'product'].forEach(function (k) { if (start.get(k)) $(k).value = start.get(k); });
+  if (start.get('from') || start.get('to')) {
+    $('range').value = 'custom';
+    $('from').value = start.get('from') || ''; $('to').value = start.get('to') || '';
+  }
+  if (start.get('includeTest') === '1') $('includeTest').checked = true;
+  toggleCustom();
+
+  ['range', 'from', 'to', 'site', 'line', 'product', 'includeTest'].forEach(function (id) {
+    $(id).addEventListener('change', function () { if (id === 'range') toggleCustom(); load(); });
+  });
+  $('reset').addEventListener('click', function () {
+    $('range').value = '30'; ['site', 'line', 'product'].forEach(function (k) { $(k).value = ''; });
+    $('includeTest').checked = false; toggleCustom(); load();
+  });
+  $('more').addEventListener('click', function () { loadList(true); });
+  load();
+}
+
+function toggleCustom() {
+  var on = $('range').value === 'custom';
+  document.querySelectorAll('.custom').forEach(function (el) { el.hidden = !on; });
+}
+
+function load() {
+  var q = params();
+  history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+  $('error').textContent = '';
+  loadSummary(q);
+  loadList(false);
+}
+
+async function loadSummary(q) {
+  var s;
+  try { s = await getJson('/admin/api/leads/summary?' + q); }
+  catch (e) { $('error').textContent = e.message; return; }
+  renderKpis(s); renderMatrix(s); renderCombos(s); renderProducts(s); renderSources(s);
+}
+
+function renderKpis(s) {
+  var personal = s.personalCombos.reduce(function (a, r) { return a + r.n; }, 0);
+  var lineHits = {};
+  s.byOfficeLine.forEach(function (r) { lineHits[r.line] = (lineHits[r.line] || 0) + r.n; });
+  var k = $('kpis'); k.textContent = '';
+  [
+    [fmt(s.total), 'Leads'],
+    [fmt(s.byOffice.length), 'Offices with leads'],
+    [fmt(lineHits.commercial || 0), 'Asked for Commercial'],
+    [fmt(personal), 'Asked for Personal'],
+    [fmt(s.crossSell.eb_interest), 'Commercial leads open to a benefits call'],
+    [fmt(s.crossSell.commercial_interest), 'Open to a business quote'],
+  ].forEach(function (pair) {
+    var el = h('div', { class: 'kpi' });
+    el.appendChild(h('div', { class: 'n' }, pair[0]));
+    el.appendChild(h('div', { class: 'l' }, pair[1]));
+    k.appendChild(el);
+  });
+}
+
+function drill(updates) {
+  Object.keys(updates).forEach(function (k) { $(k).value = updates[k]; });
+  load();
+  $('listTitle').scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderMatrix(s) {
+  var t = $('matrix'); t.textContent = '';
+  var linesSeen = {};
+  s.byOfficeLine.forEach(function (r) { linesSeen[r.line] = true; });
+  var cols = META.lines.filter(function (l) { return linesSeen[l.id]; });
+  var cell = {};
+  s.byOfficeLine.forEach(function (r) { cell[r.site_slug + '|' + r.line] = r.n; });
+  var offices = s.byOffice.slice().sort(function (a, b) { return b.n - a.n; });
+
+  var head = h('tr'); head.appendChild(h('th', {}, 'Office'));
+  cols.forEach(function (c) { head.appendChild(h('th', { class: 'num' }, c.label)); });
+  head.appendChild(h('th', { class: 'num' }, 'Leads'));
+  t.appendChild(head);
+
+  if (!offices.length) {
+    var tr0 = h('tr'); tr0.appendChild(h('td', { colspan: String(cols.length + 2), class: 'muted' }, 'No leads match these filters.'));
+    t.appendChild(tr0); return;
+  }
+
+  var colTotals = {};
+  offices.forEach(function (o) {
+    var tr = h('tr');
+    tr.appendChild(h('td', {}, siteLabel[o.site_slug] || o.site_slug));
+    cols.forEach(function (c) {
+      var n = cell[o.site_slug + '|' + c.id] || 0;
+      colTotals[c.id] = (colTotals[c.id] || 0) + n;
+      var td = h('td', { class: 'num ' + (n ? 'cell' : 'zero') }, n ? fmt(n) : '0');
+      if (n) td.addEventListener('click', function () { drill({ site: o.site_slug, line: c.id }); });
+      tr.appendChild(td);
+    });
+    var tot = h('td', { class: 'num cell' }, fmt(o.n));
+    tot.addEventListener('click', function () { drill({ site: o.site_slug, line: '' }); });
+    tr.appendChild(tot);
+    t.appendChild(tr);
+  });
+
+  var tr = h('tr', { class: 'total' }); tr.appendChild(h('td', {}, 'All offices'));
+  cols.forEach(function (c) { tr.appendChild(h('td', { class: 'num' }, fmt(colTotals[c.id]))); });
+  tr.appendChild(h('td', { class: 'num' }, fmt(s.total)));
+  t.appendChild(tr);
+}
+
+function comboLabel(combo) {
+  if (!combo || !combo.length) return 'Personal, no product chosen';
+  var sorted = combo.slice().sort(function (a, b) { return (productOrder[a] ?? 99) - (productOrder[b] ?? 99); });
+  var names = sorted.map(function (id) { return (productLabel[id] || id).replace(/ \(.*\)$/, ''); });
+  return names.length === 1 ? names[0] + ' only' : names.join(' + ');
+}
+
+function barRow(t, label, n, total) {
+  var tr = h('tr');
+  var td = h('td', {}, label);
+  var bar = h('div', { class: 'bar' }); var fillEl = h('i'); fillEl.style.width = (total ? (n / total) * 100 : 0) + '%';
+  bar.appendChild(fillEl); td.appendChild(bar);
+  tr.appendChild(td);
+  tr.appendChild(h('td', { class: 'num' }, fmt(n)));
+  tr.appendChild(h('td', { class: 'num muted' }, pct(n, total)));
+  t.appendChild(tr);
+}
+
+function tableHead(t, a, b) {
+  var tr = h('tr'); tr.appendChild(h('th', {}, a)); tr.appendChild(h('th', { class: 'num' }, b)); tr.appendChild(h('th', { class: 'num' }, 'Share'));
+  t.appendChild(tr);
+}
+
+function renderCombos(s) {
+  var t = $('combos'); t.textContent = '';
+  var total = s.personalCombos.reduce(function (a, r) { return a + r.n; }, 0);
+  tableHead(t, 'Combination', 'Leads');
+  if (!total) { var tr = h('tr'); tr.appendChild(h('td', { colspan: '3', class: 'muted' }, 'No personal lines leads in this view.')); t.appendChild(tr); return; }
+  s.personalCombos.forEach(function (r) { barRow(t, comboLabel(r.combo), r.n, total); });
+}
+
+function renderProducts(s) {
+  var t = $('products'); t.textContent = '';
+  var personal = s.personalCombos.reduce(function (a, r) { return a + r.n; }, 0);
+  tableHead(t, 'Product', 'Leads');
+  if (!s.personalProducts.length) { var tr = h('tr'); tr.appendChild(h('td', { colspan: '3', class: 'muted' }, 'None in this view.')); t.appendChild(tr); return; }
+  // Share of personal leads asking for this product, so the column reads
+  // "62% of personal leads wanted Auto" rather than a share of all products.
+  s.personalProducts.forEach(function (r) { barRow(t, (productLabel[r.product] || r.product).replace(/ \(.*\)$/, ''), r.n, personal); });
+}
+
+function renderSources(s) {
+  var t = $('sources'); t.textContent = '';
+  tableHead(t, 'Source', 'Leads');
+  s.sources.forEach(function (r) { barRow(t, r.source, r.n, s.total); });
+}
+
+function shortDate(iso) {
+  return new Date(iso).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+function pagePath(url) {
+  try { var u = new URL(url); return u.hostname.replace(/^www\./, '') + u.pathname; } catch (e) { return url || ''; }
+}
+function tags(td, ids, labels) {
+  (ids || []).forEach(function (id) { td.appendChild(h('span', { class: 'tag' }, (labels[id] || id).replace(/ \(.*\)$/, ''))); });
+}
+
+async function loadList(append) {
+  if (!append) offset = 0;
+  var q = params(); q.set('offset', String(offset));
+  var page;
+  try { page = await getJson('/admin/api/leads?' + q); }
+  catch (e) { $('error').textContent = e.message; return; }
+  var t = $('list');
+  if (!append) {
+    t.textContent = '';
+    var head = h('tr');
+    ['Received', 'Office', 'Name', 'Lines', 'Personal products', 'ZIP', 'Source'].forEach(function (c) { head.appendChild(h('th', {}, c)); });
+    t.appendChild(head);
+    if (!page.leads.length) { var tr0 = h('tr'); tr0.appendChild(h('td', { colspan: '7', class: 'muted' }, 'No leads match these filters.')); t.appendChild(tr0); }
+  }
+  page.leads.forEach(function (l) { t.appendChild(leadRow(l)); });
+  offset += page.leads.length;
+  $('more').hidden = !page.hasMore;
+}
+
+function leadRow(l) {
+  var tr = h('tr', { class: 'lead' });
+  tr.appendChild(h('td', { style: 'white-space:nowrap' }, shortDate(l.created_at)));
+  tr.appendChild(h('td', {}, siteLabel[l.site_slug] || l.site_slug));
+  tr.appendChild(h('td', {}, (l.first_name + ' ' + l.last_name).trim()));
+  var lt = h('td'); tags(lt, l.lines, lineLabel); tr.appendChild(lt);
+  var pt = h('td'); tags(pt, l.personal_products, productLabel); tr.appendChild(pt);
+  tr.appendChild(h('td', {}, l.zip));
+  tr.appendChild(h('td', { class: 'muted' }, (l.utm && l.utm.utm_source) || pagePath(l.page_url)));
+  var detail = null;
+  tr.addEventListener('click', function () {
+    if (detail) { detail.remove(); detail = null; return; }
+    detail = detailRow(l); tr.after(detail);
+  });
+  return tr;
+}
+
+function detailRow(l) {
+  var tr = h('tr', { class: 'detail' });
+  var td = h('td', { colspan: '7' });
+  var dl = h('dl');
+  function add(k, v) { if (v == null || v === '') return; dl.appendChild(h('dt', {}, k)); dl.appendChild(h('dd', {}, String(v))); }
+  function yn(v) { return v === true ? 'Yes' : v === false ? 'No' : null; }
+  add('Phone', l.phone); add('Email', l.email);
+  add('Business', l.business_name); add('Employees', l.employee_count);
+  add('Open to benefits call', yn(l.eb_contact_ok)); add('Open to business quote', yn(l.commercial_quote_ok));
+  if (l.marine) {
+    Object.keys(l.marine).forEach(function (k) {
+      var v = l.marine[k]; if (k === 'lake') v = lakeLabel[v] || v;
+      add('Marine: ' + k.replace(/([A-Z])/g, ' $1').toLowerCase(), typeof v === 'object' ? JSON.stringify(v) : v);
+    });
+  }
+  add('Page', l.page_url);
+  Object.keys(l.utm || {}).forEach(function (k) { add(k, l.utm[k]); });
+  add('Posted to Slack', l.slack_notified_at ? shortDate(l.slack_notified_at) : 'Not yet');
+  add('Lead ID', l.id);
+  td.appendChild(dl); tr.appendChild(td);
+  return tr;
+}
+
+boot();
+</script>
+</body>
+</html>
