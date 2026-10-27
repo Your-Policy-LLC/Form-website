@@ -37,6 +37,21 @@ function readEnv() {
     // direct visit is never attributed to a real agency. Embeds always name
     // their slug explicitly, so this only affects visiting the root by hand.
     defaultSiteSlug: process.env.DEFAULT_SITE_SLUG || 'preview',
+
+    // Admin sign-in. Absent values disable the admin entirely rather than
+    // leaving it open: a half-configured login must fail closed.
+    sessionSecret: process.env.SESSION_SECRET || '',
+    entra: {
+      tenantId: process.env.ENTRA_TENANT_ID || '',
+      clientId: process.env.ENTRA_CLIENT_ID || '',
+      clientSecret: process.env.ENTRA_CLIENT_SECRET || '',
+    },
+    // Named list, not "anyone in the tenant". Editing which domains may embed
+    // a lead form is a security change, so membership is explicit.
+    adminAllowedEmails: (process.env.ADMIN_ALLOWED_EMAILS || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
     // Channel the referral lands in. A variable rather than a hardcoded string
     // so a channel rename, or a later move to per-line-of-business channels,
     // is a config change instead of a code deploy.

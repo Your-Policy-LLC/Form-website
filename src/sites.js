@@ -34,7 +34,7 @@ export const DEFAULT_THEME = {
   error: '#ffb4ab',
 };
 
-export const SITES = {
+export const SEED_SITES = {
   // The bare domain serves this rather than a real agency, so a test run at the
   // preview URL is never mistaken for a lead from a client's website. Its label
   // is deliberately unmissable in Slack. allowedOrigins is empty, which makes
@@ -97,12 +97,44 @@ export const SITES = {
   },
 };
 
+// Live registry, loaded from Postgres at boot and refreshed whenever the admin
+// writes. Held in memory so getSite stays synchronous: it is called on every
+// form render and every submission, and a database round trip per request would
+// add latency and a failure mode for no benefit on data that changes rarely.
+let cache = new Map();
+
+export function loadCache(rows) {
+  const next = new Map();
+  for (const row of rows) {
+    // Which lines and personal products a form offers stay in code, keyed by
+    // slug. Only domains, label and colours moved to the database; without
+    // this merge GIA loses Boat & Marine and Sav-On loses SR-22 and broad form.
+    const seed = SEED_SITES[row.slug] || {};
+    next.set(row.slug, {
+      slug: row.slug,
+      label: row.label,
+      allowedOrigins: row.allowed_origins || [],
+      theme: { ...DEFAULT_THEME, ...(row.theme || {}) },
+      ...(seed.lines ? { lines: seed.lines } : {}),
+      ...(seed.products ? { products: seed.products } : {}),
+    });
+  }
+  cache = next;
+  console.log(`[sites] cache loaded slugs=${[...cache.keys()].join(',') || '(none)'}`);
+  return cache.size;
+}
+
+export function allSites() {
+  return [...cache.values()];
+}
+
+export function siteCount() {
+  return cache.size;
+}
+
 export function getSite(slug) {
-  if (!slug || !Object.prototype.hasOwnProperty.call(SITES, slug)) return null;
-  const site = SITES[slug];
-  // Per-site overrides merge over the default, so a site can change one colour
-  // without restating the whole palette.
-  return { slug, ...site, theme: { ...DEFAULT_THEME, ...(site.theme || {}) } };
+  if (!slug) return null;
+  return cache.get(slug) || null;
 }
 
 // Emits the theme as CSS custom properties for injection into the form's
