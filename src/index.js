@@ -1,6 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import { initSites } from './siteCache.js';
+import { initSites, loadSeedFallback } from './siteCache.js';
 import { requireAdmin } from './auth/gate.js';
 import { authRouter } from './routes/auth.js';
 import { adminRouter } from './routes/admin.js';
@@ -291,6 +291,7 @@ try {
 } catch (err) {
   dbError = err.message;
   console.error(`[boot] DEGRADED: migrations failed, submissions disabled: ${err.message}`);
+  loadSeedFallback();
 }
 
 app.listen(config.port, () => {
