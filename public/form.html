@@ -232,10 +232,12 @@ function has(id) {
 var personalBox = document.getElementById('personal');
 var productsBox = document.getElementById('products');
 
-// Marine details render only for sites whose line list includes 'marine';
-// everywhere else the section stays hidden and the lake select stays empty.
+// Marine details exist only for sites whose line list includes 'marine'.
+// Everywhere else the section is removed from the page entirely, not just
+// hidden, so another office's boat and lake fields never ship with the form.
 var marineBox = document.getElementById('marine');
 var lakeSelect = document.getElementById('homeLake');
+if (!BOOT.lines.some(function (l) { return l.id === 'marine'; })) marineBox.remove();
 (function () {
   var blank = document.createElement('option');
   blank.value = ''; blank.textContent = 'Choose a lake';
