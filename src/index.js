@@ -139,7 +139,9 @@ function renderForm(site, res) {
     slug: site.slug,
     lines: linesForSite(site),
     personalProducts: productsForSite(site),
-    lakes: LAKES,
+    // Only sites that offer Boat & Marine get the lake list. It is GIA's Dallas
+    // lakes, so sending it everywhere put Texas lakes in every office's page.
+    lakes: linesForSite(site).some((l) => l.id === 'marine') ? LAKES : [],
     consentText: CONSENT.text,
     fallbackPhone: config.fallbackPhone,
     examplePhone: site.examplePhone,
