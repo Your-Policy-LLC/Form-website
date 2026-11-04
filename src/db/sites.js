@@ -3,7 +3,7 @@ import { SEED_SITES } from '../sites.js';
 
 export async function listSites() {
   const { rows } = await query(
-    `select slug, label, allowed_origins, theme, updated_at, updated_by
+    `select slug, label, allowed_origins, theme, example_phone, example_zip, updated_at, updated_by
        from sites order by slug`,
   );
   return rows;
@@ -40,25 +40,27 @@ async function recordChange(actor, action, slug, before, after) {
 
 async function getRow(slug) {
   const { rows } = await query(
-    'select slug, label, allowed_origins, theme from sites where slug = $1',
+    'select slug, label, allowed_origins, theme, example_phone, example_zip from sites where slug = $1',
     [slug],
   );
   return rows[0] || null;
 }
 
-export async function upsertSite({ slug, label, allowedOrigins, theme }, actor) {
+export async function upsertSite({ slug, label, allowedOrigins, theme, examplePhone, exampleZip }, actor) {
   const before = await getRow(slug);
   const { rows } = await query(
-    `insert into sites (slug, label, allowed_origins, theme, updated_by)
-     values ($1,$2,$3,$4::jsonb,$5)
+    `insert into sites (slug, label, allowed_origins, theme, example_phone, example_zip, updated_by)
+     values ($1,$2,$3,$4::jsonb,$5,$6,$7)
      on conflict (slug) do update
        set label = excluded.label,
            allowed_origins = excluded.allowed_origins,
            theme = excluded.theme,
+           example_phone = excluded.example_phone,
+           example_zip = excluded.example_zip,
            updated_at = now(),
            updated_by = excluded.updated_by
-     returning slug, label, allowed_origins, theme`,
-    [slug, label, allowedOrigins, JSON.stringify(theme || {}), actor],
+     returning slug, label, allowed_origins, theme, example_phone, example_zip`,
+    [slug, label, allowedOrigins, JSON.stringify(theme || {}), examplePhone || null, exampleZip || null, actor],
   );
   await recordChange(actor, before ? 'update' : 'create', slug, before, rows[0]);
   return rows[0];

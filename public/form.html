@@ -92,7 +92,7 @@
     </div>
     <div class="field">
       <label class="lbl" for="phone">Phone <span class="star">*</span></label>
-      <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(512) 123-4567">
+      <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(555) 555-0123">
       <p class="err" id="err-phone"></p>
     </div>
     <div class="field">
@@ -102,7 +102,7 @@
     </div>
     <div class="field">
       <label class="lbl" for="zip">ZIP code <span class="star">*</span></label>
-      <input id="zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="5" placeholder="77056">
+      <input id="zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="5" placeholder="12345">
       <p class="err" id="err-zip"></p>
     </div>
   </div>
@@ -190,6 +190,11 @@
 var BOOT = "__BOOTSTRAP__";
 
 var form = document.getElementById('quote');
+
+// Example text in the phone and ZIP fields comes from the site, so a Montana
+// form shows a 406 number and a Montana ZIP rather than one office's state.
+if (BOOT.examplePhone) document.getElementById('phone').placeholder = BOOT.examplePhone;
+if (BOOT.exampleZip) document.getElementById('zip').placeholder = BOOT.exampleZip;
 var linesBox = document.getElementById('lines');
 
 function reportHeight() {
