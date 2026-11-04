@@ -34,6 +34,10 @@ export const DEFAULT_THEME = {
   error: '#ffb4ab',
 };
 
+// Shown in the phone and ZIP fields when a site has not set its own. Neutral
+// on purpose: a new office should never show another state's example numbers.
+export const DEFAULT_EXAMPLES = { phone: '(555) 555-0123', zip: '12345' };
+
 export const SEED_SITES = {
   // The bare domain serves this rather than a real agency, so a test run at the
   // preview URL is never mistaken for a lead from a client's website. Its label
@@ -115,6 +119,8 @@ export function loadCache(rows) {
       label: row.label,
       allowedOrigins: row.allowed_origins || [],
       theme: { ...DEFAULT_THEME, ...(row.theme || {}) },
+      examplePhone: row.example_phone || DEFAULT_EXAMPLES.phone,
+      exampleZip: row.example_zip || DEFAULT_EXAMPLES.zip,
       ...(seed.lines ? { lines: seed.lines } : {}),
       ...(seed.products ? { products: seed.products } : {}),
     });

@@ -88,6 +88,18 @@ function card(site, isNew) {
     'Add the live domain before a site launches, or the form will be blank on it.'));
   el.appendChild(h('p', { class: 'err', 'data-err': 'allowedOrigins' }));
 
+  el.appendChild(h('label', {}, 'Example phone shown in the form'));
+  var exPhoneIn = h('input', { type: 'text', value: site.example_phone || '', placeholder: '(406) 555-0123' });
+  el.appendChild(exPhoneIn);
+  el.appendChild(h('p', { class: 'hint' }, "Grey sample text in the phone field. Use the office's area code with 555-0123, a range reserved for fictional numbers. Blank shows (555) 555-0123."));
+  el.appendChild(h('p', { class: 'err', 'data-err': 'examplePhone' }));
+
+  el.appendChild(h('label', {}, 'Example ZIP shown in the form'));
+  var exZipIn = h('input', { type: 'text', value: site.example_zip || '', placeholder: '59714' });
+  el.appendChild(exZipIn);
+  el.appendChild(h('p', { class: 'hint' }, "The office's own ZIP. Blank shows 12345."));
+  el.appendChild(h('p', { class: 'err', 'data-err': 'exampleZip' }));
+
   if (!isNew) {
     var snip = h('div', { class: 'snippet' },
       '<script src="' + window.location.origin + '/embed.js" data-slug="' + slug + '"><\/script>');
@@ -117,6 +129,8 @@ function card(site, isNew) {
         slug: slugIn.value,
         label: labelIn.value,
         allowedOrigins: originsIn.value,
+        examplePhone: exPhoneIn.value,
+        exampleZip: exZipIn.value,
         theme: site.theme || {}
       })
     }).then(function (r) {

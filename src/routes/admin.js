@@ -64,7 +64,20 @@ function validateSite(body) {
   }
   if (badTheme.length) errors.theme = `Not a hex colour: ${badTheme.join(', ')}`;
 
-  return { ok: Object.keys(errors).length === 0, errors, value: { slug, label, allowedOrigins, theme } };
+  // Example text for the form's phone and ZIP fields. Optional; blank falls
+  // back to the neutral default. Shown to prospects, so kept to a strict shape.
+  const examplePhone = String(body?.examplePhone || '').trim();
+  const exampleZip = String(body?.exampleZip || '').trim();
+  if (examplePhone && !/^\(\d{3}\) \d{3}-\d{4}$/.test(examplePhone)) {
+    errors.examplePhone = 'Use the form (406) 555-0123.';
+  }
+  if (exampleZip && !/^\d{5}$/.test(exampleZip)) errors.exampleZip = 'Five digits.';
+
+  return {
+    ok: Object.keys(errors).length === 0,
+    errors,
+    value: { slug, label, allowedOrigins, theme, examplePhone: examplePhone || null, exampleZip: exampleZip || null },
+  };
 }
 
 adminRouter.get('/', async (_req, res) => {

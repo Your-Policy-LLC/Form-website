@@ -142,6 +142,8 @@ function renderForm(site, res) {
     lakes: LAKES,
     consentText: CONSENT.text,
     fallbackPhone: config.fallbackPhone,
+    examplePhone: site.examplePhone,
+    exampleZip: site.exampleZip,
   };
 
   res.set('Content-Security-Policy', frameAncestorsFor(site));
