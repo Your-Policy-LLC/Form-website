@@ -135,13 +135,14 @@ function recordEmbed(site, referer) {
 }
 
 function renderForm(site, res) {
+  const offersMarine = linesForSite(site).some((l) => l.id === 'marine');
   const bootstrap = {
     slug: site.slug,
     lines: linesForSite(site),
     personalProducts: productsForSite(site),
     // Only sites that offer Boat & Marine get the lake list. It is GIA's Dallas
     // lakes, so sending it everywhere put Texas lakes in every office's page.
-    lakes: linesForSite(site).some((l) => l.id === 'marine') ? LAKES : [],
+    lakes: offersMarine ? LAKES : [],
     consentText: CONSENT.text,
     fallbackPhone: config.fallbackPhone,
     examplePhone: site.examplePhone,
@@ -153,7 +154,9 @@ function renderForm(site, res) {
   res.set('Referrer-Policy', 'no-referrer');
   res.type('html');
   res.send(
-    formTemplate
+    // The boat section is removed from the HTML, not just hidden, for sites
+    // that do not offer Boat & Marine, so it never appears in their page source.
+    (offersMarine ? formTemplate : formTemplate.replace(/<!--marine:start-->[\s\S]*?<!--marine:end-->/, ''))
       .replace('/*__THEME__*/', themeCss(site.theme))
       .replace('"__BOOTSTRAP__"', JSON.stringify(bootstrap)),
   );

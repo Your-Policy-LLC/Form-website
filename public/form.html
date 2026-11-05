@@ -112,6 +112,7 @@
     <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
   </div>
 
+  <!--marine:start-->
   <div id="marine" hidden style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
     <div class="sec">Tell us about the boat</div>
     <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Three quick details so we can start the quote before we call.</p>
@@ -133,6 +134,7 @@
       </div>
     </div>
   </div>
+  <!--marine:end-->
 
   <div id="personal" hidden style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
     <div class="sec">What would you like quoted? <span class="star">*</span></div>
@@ -237,13 +239,12 @@ function has(id) {
 var personalBox = document.getElementById('personal');
 var productsBox = document.getElementById('products');
 
-// Marine details exist only for sites whose line list includes 'marine'.
-// Everywhere else the section is removed from the page entirely, not just
-// hidden, so another office's boat and lake fields never ship with the form.
+// Marine details exist only for sites whose line list includes 'marine'. The
+// server strips the section from every other site's page, so these are null
+// there and everything below that touches them is guarded.
 var marineBox = document.getElementById('marine');
 var lakeSelect = document.getElementById('homeLake');
-if (!BOOT.lines.some(function (l) { return l.id === 'marine'; })) marineBox.remove();
-(function () {
+if (lakeSelect) (function () {
   var blank = document.createElement('option');
   blank.value = ''; blank.textContent = 'Choose a lake';
   lakeSelect.appendChild(blank);
@@ -285,7 +286,7 @@ function syncCommercial() {
   document.getElementById('commercialQuestion').hidden = !(has('employee-benefits') && !has('commercial'));
 
   personalBox.hidden = !has('personal');
-  marineBox.hidden = !has('marine');
+  if (marineBox) marineBox.hidden = !has('marine');
 
   if (!business) {
     ['businessName', 'employeeCount', 'ebContactOk', 'commercialQuoteOk']
@@ -294,7 +295,7 @@ function syncCommercial() {
   if (personalBox.hidden) {
     document.getElementById('err-personalProducts').textContent = '';
   }
-  if (marineBox.hidden) {
+  if (marineBox && marineBox.hidden) {
     ['boatYear', 'boatMakeModel', 'homeLake'].forEach(function (f) { clearError(f); });
   }
   reportHeight();
