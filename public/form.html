@@ -197,8 +197,13 @@ if (BOOT.examplePhone) document.getElementById('phone').placeholder = BOOT.examp
 if (BOOT.exampleZip) document.getElementById('zip').placeholder = BOOT.exampleZip;
 var linesBox = document.getElementById('lines');
 
+// Measure the content, not the document. documentElement.scrollHeight is never
+// smaller than the frame's own height, so a form that got shorter (a section
+// closed, or a wider column fitting more per row) kept reporting the old
+// height and left empty space under the submit button. The body's box is the
+// content plus its padding, whatever size the frame currently is.
 function reportHeight() {
-  var h = document.documentElement.scrollHeight;
+  var h = Math.ceil(document.body.getBoundingClientRect().height);
   parent.postMessage({ type: 'yp-form-height', height: h }, '*');
 }
 
@@ -437,7 +442,7 @@ form.addEventListener('submit', function (event) {
 // change above. ResizeObserver covers the cases the explicit calls miss, such
 // as a long consent string wrapping differently at narrow widths.
 if (window.ResizeObserver) {
-  new ResizeObserver(reportHeight).observe(document.documentElement);
+  new ResizeObserver(reportHeight).observe(document.body);
 }
 window.addEventListener('load', reportHeight);
 syncCommercial();
